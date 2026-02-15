@@ -667,8 +667,9 @@ function Settings.build(page, r)
         local listening  = false
         local currentKey = Enum.KeyCode.LeftControl
 
-        -- Nombre corto legible
+        -- Nombre corto legible para CUALQUIER tecla
         local function keyName(kc)
+            -- Teclas especiales con nombres personalizados
             local names = {
                 [Enum.KeyCode.LeftControl]  = "L.Ctrl",
                 [Enum.KeyCode.RightControl] = "R.Ctrl",
@@ -686,24 +687,55 @@ function Settings.build(page, r)
                 [Enum.KeyCode.Return]       = "Enter",
                 [Enum.KeyCode.Escape]       = "Esc",
                 [Enum.KeyCode.Space]        = "Space",
+                [Enum.KeyCode.PageUp]       = "PgUp",
+                [Enum.KeyCode.PageDown]     = "PgDn",
+                [Enum.KeyCode.LeftSuper]    = "L.Win",
+                [Enum.KeyCode.RightSuper]   = "R.Win",
             }
+            
+            -- Si está en la tabla, retornar nombre personalizado
             if names[kc] then return names[kc] end
+            
+            -- Para cualquier otra tecla, extraer el nombre del enum
             local raw = tostring(kc):gsub("Enum%.KeyCode%.", "")
-            if #raw <= 6 then return raw end
-            return raw:sub(1, 6)
+            
+            -- Letras y números se muestran tal cual
+            if raw:match("^[A-Z]$") or raw:match("^[0-9]$") then
+                return raw
+            end
+            
+            -- Para teclas más largas, truncar si es necesario
+            if #raw <= 6 then 
+                return raw 
+            else
+                return raw:sub(1, 5) .. "."
+            end
         end
 
         -- Escucha la siguiente tecla pulsada
         local listenConn = nil
         local function startListening()
             if listenConn then listenConn:Disconnect() end
+            
             listenConn = UIS.InputBegan:Connect(function(input, gpe)
+                -- NO ignorar gpe aquí porque queremos capturar CUALQUIER tecla
                 if input.UserInputType ~= Enum.UserInputType.Keyboard then return end
+                
+                -- Detener el modo listening
                 listening = false
                 currentKey = input.KeyCode
-                if listenConn then listenConn:Disconnect(); listenConn = nil end
-                keyLbl.Text       = keyName(currentKey)
+                
+                -- Desconectar el listener
+                if listenConn then 
+                    listenConn:Disconnect()
+                    listenConn = nil 
+                end
+                
+                -- Actualizar el display
+                keyLbl.Text = keyName(currentKey)
                 keyLbl.TextColor3 = C.WHITE
+                
+                -- Feedback visual de confirmación
                 tw(keyBadgeBg, .08, { BackgroundColor3 = Color3.fromRGB(25, 55, 25) })
                 task.delay(.35, function()
                     tw(keyBadgeBg, .2, { BackgroundColor3 = Color3.fromRGB(22, 22, 22) })
@@ -716,28 +748,48 @@ function Settings.build(page, r)
             if listening then return end
             listening = true
             tw(keyBadgeBg, .1, { BackgroundColor3 = Color3.fromRGB(38, 30, 12) })
-            keyLbl.Text       = "..."
+            keyLbl.Text = "..."
             keyLbl.TextColor3 = C.GRAY
             startListening()
         end)
 
         keyBtn.MouseEnter:Connect(function()
-            if not listening then tw(keyBadgeBg, .1, { BackgroundColor3 = Color3.fromRGB(30, 30, 30) }) end
+            if not listening then 
+                tw(keyBadgeBg, .1, { BackgroundColor3 = Color3.fromRGB(30, 30, 30) }) 
+            end
         end)
         keyBtn.MouseLeave:Connect(function()
-            if not listening then tw(keyBadgeBg, .1, { BackgroundColor3 = Color3.fromRGB(22, 22, 22) }) end
+            if not listening then 
+                tw(keyBadgeBg, .1, { BackgroundColor3 = Color3.fromRGB(22, 22, 22) }) 
+            end
         end)
 
-        -- Toggle visibilidad de la ventana con la tecla asignada
-        UIS.InputBegan:Connect(function(input, gpe)
+        -- Toggle visibilidad con la tecla asignada
+        local toggleConn = UIS.InputBegan:Connect(function(input, gpe)
+            -- Ignorar eventos procesados por el juego
             if gpe then return end
+            -- Ignorar si estamos en modo listening
+            if listening then return end
+            
             if input.UserInputType == Enum.UserInputType.Keyboard
-            and input.KeyCode == currentKey
-            and not listening then
+            and input.KeyCode == currentKey then
+                -- Buscar la ventana y togglear
                 if r.toggleWindow then
                     r.toggleWindow()
+                elseif r.win then
+                    r.win.Visible = not r.win.Visible
+                elseif r.window then
+                    r.window.Visible = not r.window.Visible
+                elseif r.frame then
+                    r.frame.Visible = not r.frame.Visible
                 end
             end
+        end)
+        
+        -- Cleanup cuando se destruye
+        root.Destroying:Connect(function()
+            if listenConn then listenConn:Disconnect() end
+            if toggleConn then toggleConn:Disconnect() end
         end)
     end
 
