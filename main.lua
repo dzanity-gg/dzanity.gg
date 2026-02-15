@@ -341,6 +341,8 @@ Settings.build(tPages[4], {
     tw        = tw,
     mk        = mk,
     rnd       = rnd,
+    Win       = Win,        -- ✅ AGREGADO
+    anim      = anim,       -- ✅ AGREGADO
 })
 
 -- ── OPEN ANIMATION ───────────────────────────────────────────
