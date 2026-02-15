@@ -683,7 +683,7 @@ function Settings.build(page, r)
                 [Enum.KeyCode.Home]         = "Home",
                 [Enum.KeyCode.Delete]       = "Del",
                 [Enum.KeyCode.End]          = "End",
-                [Enum.KeyCode.BackSpace]    = "Back",
+                [Enum.KeyCode.Backspace]    = "Back",
                 [Enum.KeyCode.Return]       = "Enter",
                 [Enum.KeyCode.Escape]       = "Esc",
                 [Enum.KeyCode.Space]        = "Space",
