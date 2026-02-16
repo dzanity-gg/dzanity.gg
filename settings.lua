@@ -788,7 +788,7 @@ function Settings.build(page, r)
         end)
     end
 
-     -- ── Construir la página ──────────────────────────────────
+    -- ── Construir la página ──────────────────────────────────
     task.delay(1, function()
         -- Fila superior: dos paneles lado a lado
         local topRow = mk("Frame", {
@@ -799,7 +799,7 @@ function Settings.build(page, r)
         -- Padding para la fila completa
         mk("UIPadding", {
             PaddingLeft = UDim.new(0, 0),    -- Custom Panel pegado a la izquierda (NO SE MUEVE)
-            PaddingRight = UDim.new(0, 20),  -- ⬅️ AUMENTADO de 10 a 20px para mover Keybinds a la derecha
+            PaddingRight = UDim.new(0, 200),  -- ⬅️ AUMENTADO DRÁSTICAMENTE a 200px para mover Keybinds muy a la derecha
         }, topRow)
         
         mk("UIListLayout", {
