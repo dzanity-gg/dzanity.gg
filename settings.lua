@@ -1,9 +1,11 @@
 -- ============================================================
 -- settings.lua  –  PanelBase | dzanity.gg
+-- ACTUALIZADO: Incluye Panel de Info Sesión
 -- ============================================================
 
-local UIS        = game:GetService("UserInputService")
-local RunService = game:GetService("RunService")
+local UIS         = game:GetService("UserInputService")
+local RunService  = game:GetService("RunService")
+local HttpService = game:GetService("HttpService")
 
 local Settings = {}
 
@@ -162,7 +164,6 @@ function Settings.build(page, r)
     -- ACCENT COLOR PICKER
     -- ════════════════════════════════════════════════════════
     local function CreateAccentPicker(parent)
-        -- Separador de sección
         makeSectionLabel(parent, "ACCENT COLOR", SO())
         
         local originalColor               = C.RED
@@ -185,14 +186,12 @@ function Settings.build(page, r)
         }, parent)
         mk("UIListLayout", { Padding = UDim.new(0, 6), SortOrder = Enum.SortOrder.LayoutOrder }, root)
 
-        -- Row: Accent Color checkbox
         local row1 = makeRow(root, "Accent Color", 1)
         local chkBg, chkMark, chkBtn = makeCheckbox(row1, 5)
         chkBg.Position = UDim2.new(1, -18, 0.5, -9)
 
         local checked = false
 
-        -- Row: RGB Mode checkbox
         local rgbModeOn = false
         local rgbHue    = 0
         local rgbConn   = nil
@@ -209,7 +208,6 @@ function Settings.build(page, r)
         end
 
         local row2 = makeRow(root, "RGB Mode", 2)
-        -- badge LED
         local ledBadge = mk("Frame", {
             Size = UDim2.new(0, 28, 0, 13), Position = UDim2.new(0, 76, 0.5, -6),
             BackgroundColor3 = Color3.fromRGB(22, 22, 22), BorderSizePixel = 0, ZIndex = 6,
@@ -241,7 +239,6 @@ function Settings.build(page, r)
             end
         end)
 
-        -- Botón Color Palette desplegable
         local palBtn = mk("TextButton", {
             Text = "", BackgroundTransparency = 1,
             Size = UDim2.new(1, 0, 0, 28), BorderSizePixel = 0,
@@ -278,7 +275,6 @@ function Settings.build(page, r)
         palBtn.MouseEnter:Connect(function() tw(palBg,.1,{BackgroundColor3=Color3.fromRGB(25,25,25)}) end)
         palBtn.MouseLeave:Connect(function() tw(palBg,.1,{BackgroundColor3=Color3.fromRGB(20,20,20)}) end)
 
-        -- Panel HSV colapsable
         local pickerPanel = mk("Frame", {
             Size = UDim2.new(1, 0, 0, 0),
             BackgroundColor3 = Color3.fromRGB(16,16,16),
@@ -463,7 +459,6 @@ function Settings.build(page, r)
     }
 
     local function CreateFontPicker(parent)
-        -- Separador de sección
         makeSectionLabel(parent, "FONT", SO())
         
         local PW       = 228
@@ -482,12 +477,10 @@ function Settings.build(page, r)
         }, parent)
         mk("UIListLayout",{Padding=UDim.new(0,6),SortOrder=Enum.SortOrder.LayoutOrder},root)
 
-        -- Row: Font enable checkbox
         local row1 = makeRow(root, "Custom Font", 1)
         local chkBg, chkMark, chkBtn = makeCheckbox(row1, 5)
         chkBg.Position = UDim2.new(1, -18, 0.5, -9)
 
-        -- Dropdown button
         local selBtn = mk("TextButton",{
             Text="",BackgroundTransparency=1,Size=UDim2.new(1,0,0,28),
             BorderSizePixel=0,ZIndex=5,AutoButtonColor=false,LayoutOrder=2,
@@ -654,7 +647,6 @@ function Settings.build(page, r)
             if #raw <= 6 then return raw else return raw:sub(1,5).."." end
         end
 
-        -- Helper: fila de keybind estilo imagen
         local function makeKeyRow(parent, labelText, defaultKey, lo)
             local row = mk("Frame", {
                 Size = UDim2.new(1, 0, 0, 28),
@@ -668,7 +660,6 @@ function Settings.build(page, r)
                 TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 5,
             }, row)
 
-            -- Badge de tecla estilo imagen: gris oscuro, texto blanco bold
             local keyBg = mk("Frame", {
                 Size = UDim2.new(0, 46, 0, 20),
                 Position = UDim2.new(1, -46, 0.5, -10),
@@ -700,7 +691,6 @@ function Settings.build(page, r)
             return keyBg, keyLbl, keyBtn
         end
 
-        -- MINIMIZE KEY
         local minSep = makeSectionLabel(root, "TOGGLE VISIBILITY", 1)
         local minKeyBg, minKeyLbl, minKeyBtn = makeKeyRow(root, "Minimize Key", Enum.KeyCode.LeftControl, 2)
 
@@ -733,7 +723,6 @@ function Settings.build(page, r)
             startMinListening()
         end)
 
-        -- CLOSE KEY
         local closeSep = makeSectionLabel(root, "CLOSE PANEL", 3)
         local closeKeyBg, closeKeyLbl, closeKeyBtn = makeKeyRow(root, "Close Key", Enum.KeyCode.LeftAlt, 4)
 
@@ -766,7 +755,6 @@ function Settings.build(page, r)
             startCloseListening()
         end)
 
-        -- GLOBAL INPUT HANDLER
         local toggleConn = UIS.InputBegan:Connect(function(input, gpe)
             if gpe then return end
             if minListening or closeListening then return end
@@ -788,7 +776,222 @@ function Settings.build(page, r)
         end)
     end
 
-    -- ── Construir la página ──────────────────────────────────
+    -- ════════════════════════════════════════════════════════
+    -- 🆕 SESSION INFO PANEL
+    -- ════════════════════════════════════════════════════════
+    local function CreateSessionInfo(parent)
+        local SAVE_FILE = "serios_saved.json"
+        
+        local canRead = (
+            typeof(readfile) == "function" and
+            typeof(isfile) == "function"
+        )
+
+        local function loadSessionInfo()
+            if not canRead then 
+                return "N/A", "N/A" 
+            end
+
+            local ok, result = pcall(function()
+                if not isfile(SAVE_FILE) then return nil end
+                return HttpService:JSONDecode(readfile(SAVE_FILE))
+            end)
+
+            if ok and result and result.username and result.key then
+                return result.username, result.key
+            end
+
+            return "Not Found", "Not Found"
+        end
+
+        local username, key = loadSessionInfo()
+        
+        makeSectionLabel(parent, "SESSION INFORMATION", SO())
+        
+        local root = mk("Frame", {
+            Size = UDim2.new(1, 0, 0, 0), 
+            AutomaticSize = Enum.AutomaticSize.Y,
+            BackgroundTransparency = 1, 
+            LayoutOrder = SO(),
+        }, parent)
+        mk("UIListLayout", { 
+            Padding = UDim.new(0, 8), 
+            SortOrder = Enum.SortOrder.LayoutOrder 
+        }, root)
+
+        -- USERNAME ROW
+        local usernameRow = mk("Frame", {
+            Size = UDim2.new(1, 0, 0, 0),
+            AutomaticSize = Enum.AutomaticSize.Y,
+            BackgroundTransparency = 1,
+            LayoutOrder = 1,
+        }, root)
+
+        mk("TextLabel", {
+            Text = "Username", 
+            Font = Enum.Font.GothamSemibold, 
+            TextSize = 9,
+            TextColor3 = C.GRAY,
+            BackgroundTransparency = 1,
+            Size = UDim2.new(1, 0, 0, 14),
+            TextXAlignment = Enum.TextXAlignment.Left,
+            ZIndex = 5,
+        }, usernameRow)
+
+        local userBox = mk("Frame", {
+            Size = UDim2.new(1, 0, 0, 32),
+            Position = UDim2.new(0, 0, 0, 16),
+            BackgroundColor3 = Color3.fromRGB(20, 20, 20),
+            BorderSizePixel = 0,
+            ZIndex = 5,
+        }, usernameRow)
+        rnd(6, userBox)
+        mk("UIStroke", { 
+            Color = C.LINE, 
+            Thickness = 1, 
+            Transparency = 0.4 
+        }, userBox)
+
+        local userIcon = mk("ImageLabel", {
+            Image = "rbxassetid://75066739039083",
+            Size = UDim2.new(0, 16, 0, 16),
+            Position = UDim2.new(0, 10, 0.5, -8),
+            BackgroundTransparency = 1,
+            ImageColor3 = C.RED,
+            ZIndex = 6,
+        }, userBox)
+        table.insert(accentEls, { el = userIcon, prop = "ImageColor3" })
+
+        mk("TextLabel", {
+            Text = username,
+            Font = Enum.Font.Code,
+            TextSize = 10,
+            TextColor3 = C.WHITE,
+            BackgroundTransparency = 1,
+            Size = UDim2.new(1, -40, 1, 0),
+            Position = UDim2.new(0, 32, 0, 0),
+            TextXAlignment = Enum.TextXAlignment.Left,
+            ZIndex = 6,
+        }, userBox)
+
+        -- KEY ROW
+        local keyRow = mk("Frame", {
+            Size = UDim2.new(1, 0, 0, 0),
+            AutomaticSize = Enum.AutomaticSize.Y,
+            BackgroundTransparency = 1,
+            LayoutOrder = 2,
+        }, root)
+
+        mk("TextLabel", {
+            Text = "Key", 
+            Font = Enum.Font.GothamSemibold, 
+            TextSize = 9,
+            TextColor3 = C.GRAY,
+            BackgroundTransparency = 1,
+            Size = UDim2.new(1, 0, 0, 14),
+            TextXAlignment = Enum.TextXAlignment.Left,
+            ZIndex = 5,
+        }, keyRow)
+
+        local keyBox = mk("Frame", {
+            Size = UDim2.new(1, 0, 0, 32),
+            Position = UDim2.new(0, 0, 0, 16),
+            BackgroundColor3 = Color3.fromRGB(20, 20, 20),
+            BorderSizePixel = 0,
+            ZIndex = 5,
+        }, keyRow)
+        rnd(6, keyBox)
+        mk("UIStroke", { 
+            Color = C.LINE, 
+            Thickness = 1, 
+            Transparency = 0.4 
+        }, keyBox)
+
+        local keyIcon = mk("ImageLabel", {
+            Image = "rbxassetid://126448589402910",
+            Size = UDim2.new(0, 16, 0, 16),
+            Position = UDim2.new(0, 10, 0.5, -8),
+            BackgroundTransparency = 1,
+            ImageColor3 = C.RED,
+            ZIndex = 6,
+        }, keyBox)
+        table.insert(accentEls, { el = keyIcon, prop = "ImageColor3" })
+
+        local displayKey = string.rep("•", math.min(#key, 24))
+        local keyLabel = mk("TextLabel", {
+            Text = displayKey,
+            Font = Enum.Font.Code,
+            TextSize = 10,
+            TextColor3 = C.WHITE,
+            BackgroundTransparency = 1,
+            Size = UDim2.new(1, -70, 1, 0),
+            Position = UDim2.new(0, 32, 0, 0),
+            TextXAlignment = Enum.TextXAlignment.Left,
+            ZIndex = 6,
+        }, keyBox)
+
+        local showKey = false
+        local eyeBtn = mk("TextButton", {
+            Text = "👁",
+            Font = Enum.Font.Code,
+            TextSize = 14,
+            TextColor3 = C.GRAY,
+            BackgroundTransparency = 1,
+            Size = UDim2.new(0, 24, 0, 24),
+            Position = UDim2.new(1, -28, 0.5, -12),
+            ZIndex = 7,
+            AutoButtonColor = false,
+        }, keyBox)
+
+        eyeBtn.MouseButton1Click:Connect(function()
+            showKey = not showKey
+            keyLabel.Text = showKey and key or displayKey
+            tw(eyeBtn, 0.1, { 
+                TextColor3 = showKey and C.RED or C.GRAY 
+            })
+        end)
+
+        eyeBtn.MouseEnter:Connect(function() 
+            if not showKey then 
+                tw(eyeBtn, 0.1, { TextColor3 = C.WHITE }) 
+            end
+        end)
+        eyeBtn.MouseLeave:Connect(function() 
+            if not showKey then 
+                tw(eyeBtn, 0.1, { TextColor3 = C.GRAY }) 
+            end
+        end)
+
+        -- STATUS BADGE
+        local statusBadge = mk("Frame", {
+            Size = UDim2.new(0, 100, 0, 22),
+            BackgroundColor3 = Color3.fromRGB(18, 45, 18),
+            BorderSizePixel = 0,
+            ZIndex = 5,
+            LayoutOrder = 3,
+        }, root)
+        rnd(6, statusBadge)
+        mk("UIStroke", { 
+            Color = Color3.fromRGB(50, 200, 80), 
+            Thickness = 1, 
+            Transparency = 0.3 
+        }, statusBadge)
+
+        mk("TextLabel", {
+            Text = "✓ Verified",
+            Font = Enum.Font.GothamBold,
+            TextSize = 9,
+            TextColor3 = Color3.fromRGB(50, 200, 80),
+            BackgroundTransparency = 1,
+            Size = UDim2.new(1, 0, 1, 0),
+            ZIndex = 6,
+            TextXAlignment = Enum.TextXAlignment.Center,
+        }, statusBadge)
+    end
+
+    -- ══════════════════════════════════════════════════════
+    -- CONSTRUIR LA PÁGINA
+    -- ══════════════════════════════════════════════════════
     task.delay(1, function()
         -- Fila superior: dos paneles lado a lado
         local topRow = mk("Frame", {
@@ -796,17 +999,16 @@ function Settings.build(page, r)
             BackgroundTransparency = 1, LayoutOrder = SO(),
         }, page)
         
-        -- Padding para la fila completa - CENTRADO
         mk("UIPadding", {
-            PaddingLeft = UDim.new(0, 10),    -- Margen izquierdo
-            PaddingRight = UDim.new(0, 10),   -- Margen derecho (igual que izquierdo)
+            PaddingLeft = UDim.new(0, 10),
+            PaddingRight = UDim.new(0, 10),
         }, topRow)
         
         mk("UIListLayout", {
             FillDirection       = Enum.FillDirection.Horizontal,
-            Padding             = UDim.new(0, 10),  -- Espacio entre paneles
+            Padding             = UDim.new(0, 10),
             SortOrder           = Enum.SortOrder.LayoutOrder,
-            HorizontalAlignment = Enum.HorizontalAlignment.Center,  -- CENTRADO
+            HorizontalAlignment = Enum.HorizontalAlignment.Center,
         }, topRow)
 
         -- Panel unificado: Custom Panel (Accent Color + Font)
@@ -817,6 +1019,22 @@ function Settings.build(page, r)
         -- Panel separado: Keybinds
         local keybindPanel = MiniPanel(topRow, "Keybinds", 248)
         CreateKeybinds(keybindPanel)
+
+        -- 🆕 Fila inferior: Session Info Panel
+        local bottomRow = mk("Frame", {
+            Size = UDim2.new(1, 0, 0, 0), 
+            AutomaticSize = Enum.AutomaticSize.Y,
+            BackgroundTransparency = 1, 
+            LayoutOrder = SO(),
+        }, page)
+        
+        mk("UIPadding", {
+            PaddingLeft = UDim.new(0, 10),
+            PaddingRight = UDim.new(0, 10),
+        }, bottomRow)
+
+        local sessionPanel = MiniPanel(bottomRow, "Info Sesion", nil)
+        CreateSessionInfo(sessionPanel)
     end)
 end
 
