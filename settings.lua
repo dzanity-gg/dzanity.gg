@@ -162,6 +162,9 @@ function Settings.build(page, r)
     -- ACCENT COLOR PICKER
     -- ════════════════════════════════════════════════════════
     local function CreateAccentPicker(parent)
+        -- Separador de sección
+        makeSectionLabel(parent, "ACCENT COLOR", SO())
+        
         local originalColor               = C.RED
         local currentH, currentS, currentV = Color3.toHSV(C.RED)
         local pickerOpen  = false
@@ -460,6 +463,9 @@ function Settings.build(page, r)
     }
 
     local function CreateFontPicker(parent)
+        -- Separador de sección
+        makeSectionLabel(parent, "FONT", SO())
+        
         local PW       = 228
         local ITEMH    = 26
         local GAPF     = 3
@@ -784,7 +790,7 @@ function Settings.build(page, r)
 
     -- ── Construir la página ──────────────────────────────────
     task.delay(1, function()
-        -- Fila superior: dos paneles lado a lado, ancho igual, ocupan todo el espacio
+        -- Fila superior: dos paneles lado a lado
         local topRow = mk("Frame", {
             Size = UDim2.new(1, 0, 0, 0), AutomaticSize = Enum.AutomaticSize.Y,
             BackgroundTransparency = 1, LayoutOrder = SO(),
@@ -796,14 +802,14 @@ function Settings.build(page, r)
             VerticalAlignment = Enum.VerticalAlignment.Top,
         }, topRow)
 
-        local colorPanel = MiniPanel(topRow, "Accent Color", 248)
-        CreateAccentPicker(colorPanel)
+        -- Panel unificado: Custom Panel (Accent Color + Font)
+        local customPanel = MiniPanel(topRow, "Custom Panel", 248)
+        CreateAccentPicker(customPanel)
+        CreateFontPicker(customPanel)
 
+        -- Panel separado: Keybinds
         local keybindPanel = MiniPanel(topRow, "Keybinds", 248)
         CreateKeybinds(keybindPanel)
-
-        local fontPanel = MiniPanel(page, "Font", 248)
-        CreateFontPicker(fontPanel)
     end)
 end
 
