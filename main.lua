@@ -1,5 +1,7 @@
 -- ============================================================
 -- main.lua  –  PanelBase | dzanity.gg
+-- Carga: animations.lua y settings.lua desde GitHub Raw
+-- Uso: loadstring(game:HttpGet("RAW_URL/main.lua"))()
 -- ============================================================
 
 local RAW_BASE = "https://raw.githubusercontent.com/dzanity-gg/dzanity.gg/main/"
@@ -26,10 +28,11 @@ if not Animations or not Settings then
     return
 end
 
-local Players      = game:GetService("Players")
-local UIS          = game:GetService("UserInputService")
+-- ── Servicios ────────────────────────────────────────────────
+local Players    = game:GetService("Players")
+local UIS        = game:GetService("UserInputService")
 local TweenService = game:GetService("TweenService")
-local RunService   = game:GetService("RunService")
+local RunService = game:GetService("RunService")
 
 local LocalPlayer = Players.LocalPlayer
 local PlayerGui   = LocalPlayer:WaitForChild("PlayerGui", 10)
@@ -39,9 +42,11 @@ if not PlayerGui then return end
 local old = PlayerGui:FindFirstChild("PanelBase")
 if old then old:Destroy() end
 
-local C = Settings.C
-local W = Settings.Layout
+-- ── Colores y constantes vienen de Settings ──────────────────
+local C    = Settings.C       -- paleta de colores (dueño: settings)
+local W    = Settings.Layout  -- constantes de layout
 
+-- ── Helpers ──────────────────────────────────────────────────
 local function mk(cls, props, parent)
     local obj = Instance.new(cls)
     for k, v in pairs(props) do pcall(function() obj[k] = v end) end
@@ -64,7 +69,7 @@ local SG = mk("ScreenGui", {
     Name           = "PanelBase",
     ResetOnSpawn   = false,
     IgnoreGuiInset = true,
-    ZIndexBehavior = Enum.ZIndexBehavior.Global, -- ✅ CAMBIADO: Global ignora jerarquía
+    ZIndexBehavior = Enum.ZIndexBehavior.Sibling,
 }, PlayerGui)
 
 local Win, NavBar, BodyClip
@@ -79,32 +84,25 @@ Win = mk("Frame", {
     Size             = UDim2.new(0, W.WW, 0, W.WH),
     Position         = UDim2.new(0.5, -W.WW/2, 0.5, -W.WH/2),
     BackgroundColor3 = C.WIN,
-    BorderSizePixel  = 0,
-    ClipsDescendants = false,
-    ZIndex           = 10,
+    BorderSizePixel  = 0, ClipsDescendants = false, ZIndex = 3,
 }, SG)
 rnd(14, Win)
 local WinStroke = mk("UIStroke", { Color = C.LINE, Thickness = 1, Transparency = 0.2 }, Win)
 
 -- ── TITLEBAR ─────────────────────────────────────────────────
 local TBar = mk("Frame", {
-    Size             = UDim2.new(1, 0, 0, W.TH),
-    BackgroundColor3 = C.TBAR,
-    BorderSizePixel  = 0, ZIndex = 60, ClipsDescendants = false, Active = true,
+    Size = UDim2.new(1, 0, 0, W.TH), BackgroundColor3 = C.TBAR,
+    BorderSizePixel = 0, ZIndex = 6, ClipsDescendants = false, Active = true,
 }, Win)
 mk("UICorner", { CornerRadius = UDim.new(0, 14) }, TBar)
 mk("Frame", {
-    Size             = UDim2.new(1, 0, 0, 14),
-    Position         = UDim2.new(0, 0, 1, -14),
-    BackgroundColor3 = C.TBAR,
-    BorderSizePixel  = 0, ZIndex = 50,
+    Size = UDim2.new(1, 0, 0, 14), Position = UDim2.new(0, 0, 1, -14),
+    BackgroundColor3 = C.TBAR, BorderSizePixel = 0, ZIndex = 5,
 }, TBar)
 
 local rdot = mk("Frame", {
-    Size             = UDim2.new(0, 10, 0, 10),
-    Position         = UDim2.new(0, 14, 0.5, -5),
-    BackgroundColor3 = C.RED,
-    BorderSizePixel  = 0, ZIndex = 80,
+    Size = UDim2.new(0, 10, 0, 10), Position = UDim2.new(0, 14, 0.5, -5),
+    BackgroundColor3 = C.RED, BorderSizePixel = 0, ZIndex = 8,
 }, TBar)
 rnd(5, rdot)
 
@@ -113,212 +111,62 @@ local function tlbl(txt, font, sz, col, x, w)
         Text = txt, Font = font, TextSize = sz, TextColor3 = col,
         BackgroundTransparency = 1,
         Size = UDim2.new(0, w, 0, W.TH), Position = UDim2.new(0, x, 0, 0),
-        TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 80,
+        TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 8,
     }, TBar)
 end
 
-local title1 = tlbl("dzanity.gg",  Enum.Font.GothamBold,  13, C.WHITE, 30,  80)
-local title2 = tlbl("|",           Enum.Font.GothamBold,  16, C.RED,  113,  14)
-local title3 = tlbl("Base Panel",  Enum.Font.Gotham,      12, C.GRAY, 129, 110)
-local title4 = tlbl("|",           Enum.Font.GothamBold,  14, C.MUTED,241,  14)
-local title5 = tlbl("v1.0.0",      Enum.Font.Code,        11, C.MUTED,257,  60)
+local title1 = tlbl("dzanity.gg",  Enum.Font.GothamBold,  13, C.WHITE,  30,  80)
+local title2 = tlbl("|",           Enum.Font.GothamBold,  16, C.RED,   113,  14)
+local title3 = tlbl("Base Panel",  Enum.Font.Gotham,      12, C.GRAY,  129, 110)
+local title4 = tlbl("|",           Enum.Font.GothamBold,  14, C.MUTED, 241,  14)
+local title5 = tlbl("v1.0.0",      Enum.Font.Code,        11, C.MUTED, 257,  60)
 
 local MinB = mk("TextButton", {
     Text = "─", Font = Enum.Font.GothamBold, TextSize = 16,
     TextColor3 = C.GRAY, BackgroundTransparency = 1, BorderSizePixel = 0,
     Size = UDim2.new(0, 36, 0, W.TH), Position = UDim2.new(0, W.WW - 72, 0, 0),
-    ZIndex = 80, AutoButtonColor = false,
+    ZIndex = 8, AutoButtonColor = false,
 }, TBar)
 
 local ClsB = mk("TextButton", {
     Text = "×", Font = Enum.Font.GothamBold, TextSize = 22,
     TextColor3 = C.GRAY, BackgroundTransparency = 1, BorderSizePixel = 0,
     Size = UDim2.new(0, 36, 0, W.TH), Position = UDim2.new(0, W.WW - 36, 0, 0),
-    ZIndex = 80, AutoButtonColor = false,
+    ZIndex = 8, AutoButtonColor = false,
 }, TBar)
 
-ClsB.MouseEnter:Connect(function() tw(ClsB, .1, { TextColor3 = C.RED   }) end)
-ClsB.MouseLeave:Connect(function() tw(ClsB, .1, { TextColor3 = C.GRAY  }) end)
+ClsB.MouseEnter:Connect(function() tw(ClsB, .1, { TextColor3 = C.RED }) end)
+ClsB.MouseLeave:Connect(function() tw(ClsB, .1, { TextColor3 = C.GRAY }) end)
 MinB.MouseEnter:Connect(function() tw(MinB, .1, { TextColor3 = C.WHITE }) end)
-MinB.MouseLeave:Connect(function() tw(MinB, .1, { TextColor3 = C.GRAY  }) end)
+MinB.MouseLeave:Connect(function() tw(MinB, .1, { TextColor3 = C.GRAY }) end)
 
 -- ── BODY CLIP ────────────────────────────────────────────────
--- ZIndex 20: encima del Win(10) pero debajo de partículas(30) y TBar(60)
 BodyClip = mk("Frame", {
-    Size             = UDim2.new(0, W.WW, 0, W.BH),
-    Position         = UDim2.new(0, 0, 0, W.TH),
-    BackgroundColor3 = C.WIN,
-    BorderSizePixel  = 0, ZIndex = 20, ClipsDescendants = true,
+    Size = UDim2.new(0, W.WW, 0, W.BH), Position = UDim2.new(0, 0, 0, W.TH),
+    BackgroundColor3 = C.WIN, BorderSizePixel = 0, ZIndex = 2, ClipsDescendants = true,
 }, Win)
 rnd(14, BodyClip)
-
--- ── PARTÍCULAS ────────────────────────────────────────────────
--- ZIndex 30: entre BodyClip(20) y TBar(60) → visibles sobre el contenido
--- Dentro de Win con ClipsDescendants=false → no las corta
-do
-    local CFG = {
-        COUNT    = 22,
-        IMG      = "rbxassetid://120297604949715",
-        SIZE_MIN = 5,
-        SIZE_MAX = 13,
-        COLORS   = {
-            Color3.fromRGB(255,  40,  40),
-            Color3.fromRGB(200,  20,  20),
-            Color3.fromRGB(255,  80,  80),
-            Color3.fromRGB(220,  55,  55),
-            Color3.fromRGB(180,  15,  15),
-        },
-        ALPHA     = { 0.25, 0.40, 0.50, 0.60, 0.30 },
-        SPEED_MIN = 6,
-        SPEED_MAX = 22,
-        LIFE_MIN  = 5.0,
-        LIFE_MAX  = 10.0,
-        FADE_DUR  = 1.2,
-    }
-
-    local function rng(a, b) return a + (b - a) * math.random() end
-    local function pick(t)   return t[math.random(#t)] end
-    local function stw(obj, dur, props, es, ed)
-        TweenService:Create(obj,
-            TweenInfo.new(dur,
-                es or Enum.EasingStyle.Sine,
-                ed or Enum.EasingDirection.InOut),
-            props):Play()
-    end
-
-    -- Frame clip de partículas: hijo de Win, ClipsDescendants=true
-    -- para que las partículas no salgan del borde del panel,
-    -- con ZIndex=30 queda encima del BodyClip(20) en modo Global
-    local StarContainer = mk("Frame", {
-        Name                   = "StarParticles",
-        Size                   = UDim2.new(1, 0, 1, 0),
-        Position               = UDim2.new(0, 0, 0, 0),
-        BackgroundTransparency = 1,
-        ClipsDescendants       = true,
-        ZIndex                 = 30,
-        BorderSizePixel        = 0,
-    }, Win)
-    rnd(14, StarContainer)
-
-    print("[PARTICLES] StarContainer ZIndex:", StarContainer.ZIndex)
-    print("[PARTICLES] Win ZIndexBehavior:", SG.ZIndexBehavior)
-
-    local function spawnParticle()
-        local sz    = rng(CFG.SIZE_MIN, CFG.SIZE_MAX)
-        local life  = rng(CFG.LIFE_MIN, CFG.LIFE_MAX)
-        local color = pick(CFG.COLORS)
-        local alpha = pick(CFG.ALPHA)
-        local speed = rng(CFG.SPEED_MIN, CFG.SPEED_MAX)
-
-        local startX = rng(4, W.WW - sz - 4)
-        local startY = rng(W.TH + 4, W.WH - sz - 4) -- ✅ evita el titlebar
-        local angle  = rng(0, math.pi * 2)
-        local endX   = startX + math.cos(angle) * speed * life
-        local endY   = startY + math.sin(angle) * speed * life
-
-        local p = mk("ImageLabel", {
-            Size                   = UDim2.new(0, sz, 0, sz),
-            Position               = UDim2.new(0, startX, 0, startY),
-            BackgroundTransparency = 1,
-            Image                  = CFG.IMG,
-            ImageColor3            = color,
-            ImageTransparency      = 1,
-            Rotation               = rng(0, 360),
-            ZIndex                 = 30,
-        }, StarContainer)
-
-        -- Fade IN
-        stw(p, CFG.FADE_DUR,
-            { ImageTransparency = alpha },
-            Enum.EasingStyle.Sine, Enum.EasingDirection.Out)
-
-        -- Movimiento
-        TweenService:Create(p,
-            TweenInfo.new(life, Enum.EasingStyle.Linear),
-            { Position = UDim2.new(0, endX, 0, endY) }):Play()
-
-        -- Pulso de parpadeo
-        local pulseOn = true
-        task.spawn(function()
-            while pulseOn and p.Parent do
-                local pd = rng(1.0, 2.5)
-                stw(p, pd,
-                    { ImageTransparency = math.min(0.90, alpha + rng(0.20, 0.45)) },
-                    Enum.EasingStyle.Sine)
-                task.wait(pd)
-                if not p.Parent then break end
-                stw(p, pd,
-                    { ImageTransparency = alpha },
-                    Enum.EasingStyle.Sine)
-                task.wait(pd)
-            end
-        end)
-
-        -- Fade OUT
-        task.delay(life - CFG.FADE_DUR, function()
-            pulseOn = false
-            if not p.Parent then return end
-            stw(p, CFG.FADE_DUR,
-                { ImageTransparency = 1 },
-                Enum.EasingStyle.Sine, Enum.EasingDirection.In)
-        end)
-
-        -- Destruir y re-spawnear
-        task.delay(life + 0.05, function()
-            if p.Parent then p:Destroy() end
-            task.spawn(spawnParticle)
-        end)
-    end
-
-    for i = 1, CFG.COUNT do
-        task.delay(rng(0, 2.5), spawnParticle)
-    end
-
-    task.delay(4, function()
-        print("[PARTICLES CHECK] Hijos en StarContainer:", #StarContainer:GetChildren())
-        local found = false
-        for _, c in ipairs(StarContainer:GetChildren()) do
-            if c:IsA("ImageLabel") then
-                print("  ImageLabel | ZIndex:", c.ZIndex,
-                      "| Transparency:", c.ImageTransparency,
-                      "| Visible:", c.Visible)
-                found = true
-                break
-            end
-        end
-        if not found then print("  ⚠ NO HAY ImageLabels") end
-        print("  BodyClip ZIndex:", BodyClip.ZIndex)
-        print("  StarContainer ZIndex:", StarContainer.ZIndex)
-        print("  SG.ZIndexBehavior:", tostring(SG.ZIndexBehavior))
-    end)
-end
 
 -- ── PÁGINA HELPER ────────────────────────────────────────────
 local function makePage()
     local scr = mk("ScrollingFrame", {
         Size = UDim2.new(1, 0, 0, W.BH), BackgroundTransparency = 1,
         BorderSizePixel = 0, ScrollBarThickness = 0,
-        CanvasSize = UDim2.new(0, 0, 0, 0),
-        AutomaticCanvasSize = Enum.AutomaticSize.Y, ZIndex = 25,
+        CanvasSize = UDim2.new(0, 0, 0, 0), AutomaticCanvasSize = Enum.AutomaticSize.Y, ZIndex = 3,
     }, BodyClip)
     local pg = mk("Frame", {
         Size = UDim2.new(1, -24, 0, 0), Position = UDim2.new(0, 12, 0, 12),
         AutomaticSize = Enum.AutomaticSize.Y, BackgroundTransparency = 1,
-        ZIndex = 25,
     }, scr)
-    mk("UIListLayout", {
-        Padding = UDim.new(0, 12),
-        SortOrder = Enum.SortOrder.LayoutOrder,
-    }, pg)
+    mk("UIListLayout", { Padding = UDim.new(0, 12), SortOrder = Enum.SortOrder.LayoutOrder }, pg)
     return pg
 end
 
 -- ── NAVBAR ───────────────────────────────────────────────────
 NavBar = mk("Frame", {
-    Size     = UDim2.new(0, W.NW, 0, W.NH),
+    Size = UDim2.new(0, W.NW, 0, W.NH),
     Position = UDim2.new(0.5, -W.WW/2 + (W.WW - W.NW)/2, 0.5, -W.WH/2 + W.WH + W.NGAP),
-    BackgroundColor3 = C.NAV,
-    BorderSizePixel = 0, ZIndex = 80, ClipsDescendants = true,
+    BackgroundColor3 = C.NAV, BorderSizePixel = 0, ZIndex = 8, ClipsDescendants = true,
 }, SG)
 rnd(14, NavBar)
 local NavStroke = mk("UIStroke", { Color = C.LINE, Thickness = 1, Transparency = 0.2 }, NavBar)
@@ -331,14 +179,14 @@ local TDEFS = {
     { img = "rbxassetid://105322951498375", lbl = "Settings" },
 }
 
-local NT      = 4
-local GAP     = 2
-local TBW     = 68
-local TBW_EXP = 98
-local IMGS    = 20
-local navT    = {}
-local tPages  = {}
-local actNav  = 1
+local NT          = 4
+local GAP         = 2
+local TBW         = 68
+local TBW_EXP     = 98
+local IMGS        = 20
+local navT        = {}
+local tPages      = {}
+local actNav      = 1
 
 local function getActNav() return actNav end
 
@@ -347,8 +195,7 @@ local function updateTabPositions(activeIndex)
     for i = 1, NT do
         local t = navT[i]
         local w = (i == activeIndex) and TBW_EXP or TBW
-        t.targetX = cx; t.targetW = w
-        cx = cx + w + GAP
+        t.targetX = cx; t.targetW = w; cx = cx + w + GAP
     end
 end
 
@@ -361,22 +208,18 @@ end
 for i, td in ipairs(TDEFS) do
     local isF = (i == 1)
     local pill = mk("Frame", {
-        Size             = UDim2.new(0, isF and TBW_EXP or TBW, 0, W.NH - 8),
-        Position         = UDim2.new(0, 0, 0, 4),
+        Size = UDim2.new(0, isF and TBW_EXP or TBW, 0, W.NH - 8),
+        Position = UDim2.new(0, 0, 0, 4),
         BackgroundColor3 = isF and C.NAVPIL or C.NAV,
-        BorderSizePixel  = 0, ZIndex = isF and 150 or 100,
+        BorderSizePixel = 0, ZIndex = isF and 15 or 10,
     }, NavBar)
     rnd(10, pill)
 
     local img = mk("ImageLabel", {
-        Size                   = UDim2.new(0, IMGS, 0, IMGS),
-        Position               = isF
-            and UDim2.new(0, 10, 0.5, -IMGS/2)
-            or  UDim2.new(0.5, -IMGS/2, 0.5, -IMGS/2),
-        BackgroundTransparency = 1,
-        Image                  = td.img,
-        ImageColor3            = isF and C.RED or C.MUTED,
-        ZIndex                 = 110,
+        Size = UDim2.new(0, IMGS, 0, IMGS),
+        Position = isF and UDim2.new(0, 10, 0.5, -IMGS/2) or UDim2.new(0.5, -IMGS/2, 0.5, -IMGS/2),
+        BackgroundTransparency = 1, Image = td.img,
+        ImageColor3 = isF and C.RED or C.MUTED, ZIndex = 11,
     }, pill)
 
     local lbl = mk("TextLabel", {
@@ -384,56 +227,40 @@ for i, td in ipairs(TDEFS) do
         TextColor3 = C.WHITE, BackgroundTransparency = 1,
         Size = UDim2.new(0, 64, 1, 0), Position = UDim2.new(0, 36, 0, 0),
         TextXAlignment = Enum.TextXAlignment.Left,
-        TextTransparency = isF and 0 or 1, ZIndex = 110,
+        TextTransparency = isF and 0 or 1, ZIndex = 11,
     }, pill)
 
     local hit = mk("TextButton", {
         Text = "", BackgroundTransparency = 1,
-        Size = UDim2.new(1, 0, 1, 0), ZIndex = 160, AutoButtonColor = false,
+        Size = UDim2.new(1, 0, 1, 0), ZIndex = 16, AutoButtonColor = false,
     }, pill)
 
-    navT[i] = {
-        pill = pill, img = img, lbl = lbl,
-        targetX = 0, targetW = isF and TBW_EXP or TBW,
-    }
+    navT[i] = { pill = pill, img = img, lbl = lbl, targetX = 0, targetW = isF and TBW_EXP or TBW }
 
     hit.MouseButton1Click:Connect(function()
         if actNav == i then return end
-        local pv = navT[actNav]; pv.pill.ZIndex = 100
-        tw(pv.pill, .25, { BackgroundColor3 = C.NAV },  Enum.EasingStyle.Quint)
-        tw(pv.img,  .25, {
-            Position    = UDim2.new(0.5, -IMGS/2, 0.5, -IMGS/2),
-            ImageColor3 = C.MUTED,
-        }, Enum.EasingStyle.Quint)
-        tw(pv.lbl, .15, { TextTransparency = 1 })
+        local pv = navT[actNav]; pv.pill.ZIndex = 10
+        tw(pv.pill, .25, { BackgroundColor3 = C.NAV }, Enum.EasingStyle.Quint)
+        tw(pv.img,  .25, { Position = UDim2.new(0.5, -IMGS/2, 0.5, -IMGS/2), ImageColor3 = C.MUTED }, Enum.EasingStyle.Quint)
+        tw(pv.lbl,  .15, { TextTransparency = 1 })
         tPages[actNav].Parent.Visible = false
 
         actNav = i
         tPages[i].Parent.Visible = true
-        pill.ZIndex = 150
+        pill.ZIndex = 15
         updateTabPositions(i)
 
         for j = 1, NT do
             local nt = navT[j]
-            tw(nt.pill, .25, {
-                Size     = UDim2.new(0, nt.targetW, 0, W.NH - 8),
-                Position = UDim2.new(0, nt.targetX, 0, 4),
-            }, Enum.EasingStyle.Quint)
+            tw(nt.pill, .25, { Size = UDim2.new(0, nt.targetW, 0, W.NH-8), Position = UDim2.new(0, nt.targetX, 0, 4) }, Enum.EasingStyle.Quint)
         end
         tw(pill, .25, { BackgroundColor3 = C.NAVPIL }, Enum.EasingStyle.Quint)
-        tw(img,  .25, {
-            Position    = UDim2.new(0, 10, 0.5, -IMGS/2),
-            ImageColor3 = C.RED,
-        }, Enum.EasingStyle.Quint)
+        tw(img,  .25, { Position = UDim2.new(0, 10, 0.5, -IMGS/2), ImageColor3 = C.RED }, Enum.EasingStyle.Quint)
         task.delay(.1, function() tw(lbl, .2, { TextTransparency = 0 }) end)
     end)
 
-    hit.MouseEnter:Connect(function()
-        if actNav ~= i then tw(img, .1, { ImageColor3 = C.GRAY  }) end
-    end)
-    hit.MouseLeave:Connect(function()
-        if actNav ~= i then tw(img, .1, { ImageColor3 = C.MUTED }) end
-    end)
+    hit.MouseEnter:Connect(function() if actNav ~= i then tw(img, .1, { ImageColor3 = C.GRAY }) end end)
+    hit.MouseLeave:Connect(function() if actNav ~= i then tw(img, .1, { ImageColor3 = C.MUTED }) end end)
 end
 
 updateTabPositions(1)
@@ -445,7 +272,7 @@ do
     local mStart, wStart = Vector2.new(), Vector2.new()
     local DragHit = mk("TextButton", {
         Text = "", BackgroundTransparency = 1, BorderSizePixel = 0,
-        Size = UDim2.new(1, -72, 1, 0), ZIndex = 500, AutoButtonColor = false,
+        Size = UDim2.new(1, -72, 1, 0), ZIndex = 50, AutoButtonColor = false,
     }, TBar)
     DragHit.MouseButton1Down:Connect(function()
         local mp = UIS:GetMouseLocation()
@@ -453,16 +280,14 @@ do
         wStart = Vector2.new(Win.Position.X.Offset, Win.Position.Y.Offset)
     end)
     UIS.InputEnded:Connect(function(i)
-        if i.UserInputType == Enum.UserInputType.MouseButton1 then
-            dragging = false
-        end
+        if i.UserInputType == Enum.UserInputType.MouseButton1 then dragging = false end
     end)
     RunService.RenderStepped:Connect(function()
         if not dragging then return end
         local mp = UIS:GetMouseLocation(); local d = mp - mStart
         local tx = wStart.X + d.X; local ty = wStart.Y + d.Y
         local cx = Win.Position.X.Offset; local cy = Win.Position.Y.Offset
-        local nx = cx + (tx - cx) * 0.5;  local ny = cy + (ty - cy) * 0.5
+        local nx = cx + (tx - cx) * 0.5; local ny = cy + (ty - cy) * 0.5
         if math.abs(nx - tx) < 0.3 then nx = tx end
         if math.abs(ny - ty) < 0.3 then ny = ty end
         applyPos(nx, ny)
@@ -473,19 +298,19 @@ end
 local anim = Animations.init({
     C         = C,
     W         = W,
-    Win       = Win,       NavBar    = NavBar,    BodyClip  = BodyClip,
-    WinStroke = WinStroke, NavStroke = NavStroke,
-    navT      = navT,      actNavFn  = getActNav,
+    Win       = Win,        NavBar    = NavBar,    BodyClip  = BodyClip,
+    WinStroke = WinStroke,  NavStroke = NavStroke,
+    navT      = navT,       actNavFn  = getActNav,
     rdot      = rdot,
-    title1    = title1,    title2    = title2,    title3    = title3,
-    title4    = title4,    title5    = title5,
-    MinB      = MinB,      ClsB      = ClsB,
+    title1    = title1,     title2    = title2,    title3    = title3,
+    title4    = title4,     title5    = title5,
+    MinB      = MinB,       ClsB      = ClsB,
     SG        = SG,
     tw        = tw,
 })
 
 MinB.MouseButton1Click:Connect(function() anim.toggleMinimize() end)
-ClsB.MouseButton1Click:Connect(function() anim.doClose()        end)
+ClsB.MouseButton1Click:Connect(function() anim.doClose() end)
 
 -- ── KEYBINDS ─────────────────────────────────────────────────
 UIS.InputBegan:Connect(function(i, gp)
@@ -495,20 +320,29 @@ UIS.InputBegan:Connect(function(i, gp)
 end)
 
 -- ── PÁGINAS ──────────────────────────────────────────────────
-Combat.build(tPages[1],   { C = C, mk = mk, rnd = rnd, tw = tw })
-Visuals.build(tPages[2],  { C = C, mk = mk, rnd = rnd, tw = tw })
-Commands.build(tPages[3], { C = C, mk = mk, rnd = rnd, tw = tw })
+Combat.build(tPages[1], {
+    C = C, mk = mk, rnd = rnd, tw = tw,
+})
 
+Visuals.build(tPages[2], {
+    C = C, mk = mk, rnd = rnd, tw = tw,
+})
+
+Commands.build(tPages[3], {
+    C = C, mk = mk, rnd = rnd, tw = tw,
+})
+
+-- ── SETTINGS ─────────────────────────────────────────────────
 Settings.build(tPages[4], {
-    navT     = navT,
-    actNavFn = getActNav,
-    rdot     = rdot,
-    title1   = title1, title2 = title2, title3 = title3,
-    tw       = tw,
-    mk       = mk,
-    rnd      = rnd,
-    Win      = Win,
-    anim     = anim,
+    navT      = navT,
+    actNavFn  = getActNav,
+    rdot      = rdot,
+    title1    = title1,  title2 = title2,  title3 = title3,
+    tw        = tw,
+    mk        = mk,
+    rnd       = rnd,
+    Win       = Win,        -- ✅ AGREGADO
+    anim      = anim,       -- ✅ AGREGADO
 })
 
 -- ── OPEN ANIMATION ───────────────────────────────────────────
