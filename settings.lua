@@ -931,7 +931,7 @@ function Settings.build(page, r)
         end)
     end
 
-    -- ── Construir la página ──────────────────────────────────
+     -- ── Construir la página ──────────────────────────────────
     task.delay(1, function()
         -- Fila superior: dos paneles lado a lado
         local topRow = mk("Frame", {
@@ -939,15 +939,15 @@ function Settings.build(page, r)
             BackgroundTransparency = 1, LayoutOrder = SO(),
         }, page)
         
-        -- Añadir padding para márgenes izquierdo y derecho iguales
+        -- Padding SOLO izquierdo para el Custom Panel
         mk("UIPadding", {
-            PaddingLeft = UDim.new(0, 10),   -- Margen izquierdo (igual al padding interno del panel)
-            PaddingRight = UDim.new(0, 10),  -- Margen derecho (ahora igual al izquierdo)
+            PaddingLeft = UDim.new(0, 10),  -- Margen izquierdo para Custom Panel
+            -- SIN PaddingRight - dejamos que el margen derecho se maneje aparte
         }, topRow)
         
         mk("UIListLayout", {
             FillDirection     = Enum.FillDirection.Horizontal,
-            Padding           = UDim.new(0, 4),  -- Espacio reducido entre paneles
+            Padding           = UDim.new(0, 4),  -- Espacio entre paneles
             SortOrder         = Enum.SortOrder.LayoutOrder,
             HorizontalAlignment = Enum.HorizontalAlignment.Left,
         }, topRow)
@@ -960,6 +960,11 @@ function Settings.build(page, r)
         -- Panel separado: Keybinds
         local keybindPanel = MiniPanel(topRow, "Keybinds", 248)
         CreateKeybinds(keybindPanel)
+        
+        -- Agregar margen derecho al panel Keybinds directamente
+        local keybindPadding = mk("UIPadding", {
+            PaddingRight = UDim.new(0, 10),  -- Mismo margen que el izquierdo
+        }, keybindPanel)
 
         -- Contenedor con padding superior para el Transparency Panel
         local transparencyContainer = mk("Frame", {
@@ -969,7 +974,9 @@ function Settings.build(page, r)
             LayoutOrder = SO(),
         }, page)
         mk("UIPadding", { 
-            PaddingTop = UDim.new(0, 8)  -- Margen superior
+            PaddingTop = UDim.new(0, 8),  -- Margen superior
+            PaddingLeft = UDim.new(0, 10),  -- Mismo margen izquierdo
+            PaddingRight = UDim.new(0, 10),  -- Mismo margen derecho
         }, transparencyContainer)
 
         -- Panel de Transparency (ancho fijo de 500)
