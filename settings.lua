@@ -931,7 +931,7 @@ function Settings.build(page, r)
         end)
     end
 
-      -- ── Construir la página ──────────────────────────────────
+     -- ── Construir la página ──────────────────────────────────
     task.delay(1, function()
         -- Fila superior: dos paneles lado a lado
         local topRow = mk("Frame", {
@@ -939,15 +939,15 @@ function Settings.build(page, r)
             BackgroundTransparency = 1, LayoutOrder = SO(),
         }, page)
         
-        -- Padding para la fila completa - AMBOS LADOS IGUALES
+        -- Padding para la fila completa - VALORES REDUCIDOS
         mk("UIPadding", {
-            PaddingLeft = UDim.new(0, 16),   -- Aumentado para mover Custom Panel a la derecha
-            PaddingRight = UDim.new(0, 16),  -- Mantenemos el margen derecho que ya funciona
+            PaddingLeft = UDim.new(0, 8),    -- Reducido de 16 a 8px
+            PaddingRight = UDim.new(0, 8),   -- Reducido de 16 a 8px
         }, topRow)
         
         mk("UIListLayout", {
             FillDirection     = Enum.FillDirection.Horizontal,
-            Padding           = UDim.new(0, 16),  -- Aumentado para más espacio entre paneles
+            Padding           = UDim.new(0, 8),  -- Reducido de 16 a 8px
             SortOrder         = Enum.SortOrder.LayoutOrder,
             HorizontalAlignment = Enum.HorizontalAlignment.Left,
         }, topRow)
@@ -969,15 +969,15 @@ function Settings.build(page, r)
             LayoutOrder = SO(),
         }, page)
         mk("UIPadding", { 
-            PaddingTop = UDim.new(0, 16),     -- Consistente con los demás
-            PaddingLeft = UDim.new(0, 16),    -- Mismo margen izquierdo
-            PaddingRight = UDim.new(0, 16),   -- Mismo margen derecho
+            PaddingTop = UDim.new(0, 8),     -- Reducido de 16 a 8px
+            PaddingLeft = UDim.new(0, 8),    -- Reducido de 16 a 8px
+            PaddingRight = UDim.new(0, 8),   -- Reducido de 16 a 8px
         }, transparencyContainer)
 
         -- Panel de Transparency (ancho fijo de 500)
         local transparencyPanel = MiniPanel(transparencyContainer, "Transparency Panel", 500)
         CreateTransparencyPanel(transparencyPanel)
-    end)       
+    end)
 end
 
 return Settings
