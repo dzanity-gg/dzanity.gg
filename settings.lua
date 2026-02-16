@@ -940,7 +940,7 @@ function Settings.build(page, r)
         }, page)
         mk("UIListLayout", {
             FillDirection     = Enum.FillDirection.Horizontal,
-            Padding           = UDim.new(0, 8),
+            Padding           = UDim.new(0, 4),  -- ✅ Reducido de 8 a 4 para acercar los paneles
             SortOrder         = Enum.SortOrder.LayoutOrder,
             VerticalAlignment = Enum.VerticalAlignment.Top,
         }, topRow)
@@ -954,8 +954,19 @@ function Settings.build(page, r)
         local keybindPanel = MiniPanel(topRow, "Keybinds", 248)
         CreateKeybinds(keybindPanel)
 
-        -- Fila inferior: Transparency Panel (ancho fijo de 500)
-        local transparencyPanel = MiniPanel(page, "Transparency Panel", 500)
+        -- Contenedor con padding superior para el Transparency Panel
+        local transparencyContainer = mk("Frame", {
+            Size = UDim2.new(1, 0, 0, 0),
+            AutomaticSize = Enum.AutomaticSize.Y,
+            BackgroundTransparency = 1,
+            LayoutOrder = SO(),
+        }, page)
+        mk("UIPadding", { 
+            PaddingTop = UDim.new(0, 8)  -- ✅ Añade 8 píxeles de margen superior
+        }, transparencyContainer)
+
+        -- Panel de Transparency (ancho fijo de 500)
+        local transparencyPanel = MiniPanel(transparencyContainer, "Transparency Panel", 500)
         CreateTransparencyPanel(transparencyPanel)
     end)
 end
