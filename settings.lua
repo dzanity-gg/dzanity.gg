@@ -796,17 +796,17 @@ function Settings.build(page, r)
             BackgroundTransparency = 1, LayoutOrder = SO(),
         }, page)
         
-        -- Padding para la fila completa
+        -- Padding para la fila completa - CENTRADO
         mk("UIPadding", {
-            PaddingLeft = UDim.new(0, 0),    -- Panel Custom pegado a la izquierda
-            PaddingRight = UDim.new(0, 10),  -- Margen derecho para Keybinds
+            PaddingLeft = UDim.new(0, 10),    -- Margen izquierdo
+            PaddingRight = UDim.new(0, 10),   -- Margen derecho (igual que izquierdo)
         }, topRow)
         
         mk("UIListLayout", {
-            FillDirection     = Enum.FillDirection.Horizontal,
-            Padding           = UDim.new(0, 10),  -- Espacio entre paneles
-            SortOrder         = Enum.SortOrder.LayoutOrder,
-            HorizontalAlignment = Enum.HorizontalAlignment.Left,
+            FillDirection       = Enum.FillDirection.Horizontal,
+            Padding             = UDim.new(0, 10),  -- Espacio entre paneles
+            SortOrder           = Enum.SortOrder.LayoutOrder,
+            HorizontalAlignment = Enum.HorizontalAlignment.Center,  -- CENTRADO
         }, topRow)
 
         -- Panel unificado: Custom Panel (Accent Color + Font)
