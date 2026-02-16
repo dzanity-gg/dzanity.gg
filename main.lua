@@ -43,8 +43,8 @@ local old = PlayerGui:FindFirstChild("PanelBase")
 if old then old:Destroy() end
 
 -- ── Colores y constantes vienen de Settings ──────────────────
-local C    = Settings.C       -- paleta de colores (dueño: settings)
-local W    = Settings.Layout  -- constantes de layout
+local C    = Settings.C
+local W    = Settings.Layout
 
 -- ── Helpers ──────────────────────────────────────────────────
 local function mk(cls, props, parent)
@@ -120,6 +120,16 @@ local title2 = tlbl("|",           Enum.Font.GothamBold,  16, C.RED,   113,  14)
 local title3 = tlbl("Base Panel",  Enum.Font.Gotham,      12, C.GRAY,  129, 110)
 local title4 = tlbl("|",           Enum.Font.GothamBold,  14, C.MUTED, 241,  14)
 local title5 = tlbl("v1.0.0",      Enum.Font.Code,        11, C.MUTED, 257,  60)
+
+-- ── SEPARADOR TITLEBAR / BODY ────────────────────────────────
+mk("Frame", {
+    Size                   = UDim2.new(1, 0, 0, 1),
+    Position               = UDim2.new(0, 0, 1, 0),
+    BackgroundColor3       = C.LINE,
+    BorderSizePixel        = 0,
+    ZIndex                 = 7,
+    BackgroundTransparency = 0.5,
+}, TBar)
 
 local MinB = mk("TextButton", {
     Text = "─", Font = Enum.Font.GothamBold, TextSize = 16,
