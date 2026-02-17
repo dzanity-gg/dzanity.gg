@@ -734,9 +734,11 @@ function Settings.build(page, r)
         
         local function formatExpiry(exp)
             if exp == "N/A" or exp == "Not Found" then return "N/A" end
-            if type(exp) == "number" then
-                local date = os.date("*t", exp)
-                return string.format("%02d/%02d/%04d", date.day, date.month, date.year)
+            local ts = tonumber(exp)
+            if ts then
+                local d = os.date("*t", ts)
+                return string.format("%02d/%02d/%04d, %02d:%02d:%02d",
+                    d.day, d.month, d.year, d.hour, d.min, d.sec)
             end
             return tostring(exp)
         end
@@ -790,7 +792,7 @@ function Settings.build(page, r)
 
             local displayText = isPassword and string.rep("•", math.min(#value, 18)) or value
             local textLbl = mk("TextLabel", {
-                Text = displayText, Font = Enum.Font.Code, TextSize = 9,
+                Text = displayText, Font = Enum.Font.Code, TextSize = 8,
                 TextColor3 = C.WHITE, BackgroundTransparency = 1,
                 Size = UDim2.new(1, icon and -54 or -10, 1, 0),
                 Position = UDim2.new(0, icon and 36 or 8, 0, 0),
@@ -822,9 +824,9 @@ function Settings.build(page, r)
             end
         end
 
-        makeCompactField(gridRow, "USERNAME", username, "rbxassetid://75066739039083", false, 1)
-        makeCompactField(gridRow, "KEY",      key,      "rbxassetid://126448589402910", true,  2)
-        makeCompactField(gridRow, "EXPIRY",   expiryText, nil, false, 3)
+        makeCompactField(gridRow, "USERNAME", username,    "rbxassetid://75066739039083",  false, 1)
+        makeCompactField(gridRow, "KEY",      key,         "rbxassetid://126448589402910", true,  2)
+        makeCompactField(gridRow, "EXPIRY",   expiryText,  "rbxassetid://78475382175834",  false, 3)
     end
 
     task.delay(1, function()
