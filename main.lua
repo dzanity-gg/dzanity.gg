@@ -41,6 +41,11 @@ if old then old:Destroy() end
 local C = Settings.C
 local W = Settings.Layout
 
+-- ══════════════════════════════════════════════════════════
+-- CAMBIAR COLOR PRINCIPAL DE ROJO A BLANCO
+-- ══════════════════════════════════════════════════════════
+C.RED = Color3.fromRGB(255, 255, 255)  -- Blanco puro como color principal
+
 local function mk(cls, props, parent)
     local obj = Instance.new(cls)
     for k, v in pairs(props) do pcall(function() obj[k] = v end) end
