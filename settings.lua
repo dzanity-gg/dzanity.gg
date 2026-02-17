@@ -893,12 +893,28 @@ function Settings.build(page, r)
         local customPanel = MiniPanel(topRow, "Custom Panel", nil)
         customPanel.Parent.Size = UDim2.new(0.5, -5, 0, 0)
         customPanel.Parent.AutomaticSize = Enum.AutomaticSize.Y
+        local cpIcon = mk("ImageLabel", {
+            Image = "rbxassetid://79986513204084",
+            Size = UDim2.new(0, 18, 0, 18),
+            Position = UDim2.new(1, -26, 0, 7),
+            BackgroundTransparency = 1,
+            ImageColor3 = C.MUTED,
+            ZIndex = 6,
+        }, customPanel.Parent)
         CreateAccentPicker(customPanel)
         CreateFontPicker(customPanel)
 
         local keybindPanel = MiniPanel(topRow, "Keybinds", nil)
         keybindPanel.Parent.Size = UDim2.new(0.5, -5, 0, 0)
         keybindPanel.Parent.AutomaticSize = Enum.AutomaticSize.Y
+        local kbIcon = mk("ImageLabel", {
+            Image = "rbxassetid://75198932068107",
+            Size = UDim2.new(0, 18, 0, 18),
+            Position = UDim2.new(1, -26, 0, 7),
+            BackgroundTransparency = 1,
+            ImageColor3 = C.MUTED,
+            ZIndex = 6,
+        }, keybindPanel.Parent)
         CreateKeybinds(keybindPanel)
 
         -- Panel Info Sesion con badge "✓ Verified" en la barra del título
