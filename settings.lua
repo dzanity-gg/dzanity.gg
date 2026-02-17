@@ -732,11 +732,13 @@ function Settings.build(page, r)
             if viewTimeListenConn then viewTimeListenConn:Disconnect() end
             viewTimeListenConn = UIS.InputBegan:Connect(function(input, gpe)
                 if input.UserInputType ~= Enum.UserInputType.Keyboard then return end
-                viewTimeListening = false; currentViewTimeKey = input.KeyCode
+                viewTimeListening = false
+                currentViewTimeKey = input.KeyCode
                 justAssignedViewTime = true
                 task.delay(0.1, function() justAssignedViewTime = false end)
                 if viewTimeListenConn then viewTimeListenConn:Disconnect(); viewTimeListenConn = nil end
-                viewTimeKeyLbl.Text = keyName(currentViewTimeKey); viewTimeKeyLbl.TextColor3 = C.WHITE
+                viewTimeKeyLbl.Text = keyName(currentViewTimeKey)
+                viewTimeKeyLbl.TextColor3 = C.WHITE
                 tw(viewTimeKeyBg, .08, { BackgroundColor3 = Color3.fromRGB(20, 50, 20) })
                 task.delay(.35, function() tw(viewTimeKeyBg, .2, { BackgroundColor3 = Color3.fromRGB(24, 24, 24) }) end)
             end)
@@ -746,21 +748,36 @@ function Settings.build(page, r)
             if viewTimeListening then return end
             viewTimeListening = true
             tw(viewTimeKeyBg, .1, { BackgroundColor3 = Color3.fromRGB(50, 35, 10) })
-            viewTimeKeyLbl.Text = "···"; viewTimeKeyLbl.TextColor3 = C.GRAY
+            viewTimeKeyLbl.Text = "···"
+            viewTimeKeyLbl.TextColor3 = C.GRAY
             startViewTimeListening()
         end)
 
-        -- Listener para las teclas principales (minimize, close, sesion, viewTime)
+        -- ══════════════════════════════════════════════════════════════
+        -- LISTENERS GLOBALES PARA USAR LAS TECLAS
+        -- ══════════════════════════════════════════════════════════════
         local viewTimePressed = false
+        
+        -- Cuando se PRESIONA una tecla
         local toggleConn = UIS.InputBegan:Connect(function(input, gpe)
-            if gpe or minListening or closeListening or sesionListening or viewTimeListening then return end
+            if gpe then return end
             if input.UserInputType == Enum.UserInputType.Keyboard then
+                -- Si estamos en modo escucha, no hacer nada
+                if minListening or closeListening or sesionListening or viewTimeListening then 
+                    return 
+                end
+                
+                -- Minimize
                 if input.KeyCode == currentMinKey and not justAssignedMin then
                     if r.anim and r.anim.toggleMinimize then r.anim.toggleMinimize() end
                 end
+                
+                -- Close
                 if input.KeyCode == currentCloseKey and not justAssignedClose then
                     if r.anim and r.anim.doClose then r.anim.doClose() end
                 end
+                
+                -- Close Sesion
                 if input.KeyCode == currentSesionKey and not justAssignedSesion then
                     if r.anim and r.anim.doClose then r.anim.doClose() end
                     task.delay(0.3, function()
@@ -769,6 +786,8 @@ function Settings.build(page, r)
                         end)
                     end)
                 end
+                
+                -- VIEW TIME - Mostrar tiempo completo
                 if input.KeyCode == currentViewTimeKey and not justAssignedViewTime then
                     viewTimePressed = true
                     if expiryLabelRef and fullExpiryText ~= "" then
@@ -778,8 +797,10 @@ function Settings.build(page, r)
             end
         end)
 
+        -- Cuando se SUELTA una tecla
         local toggleConnRelease = UIS.InputEnded:Connect(function(input)
             if input.UserInputType == Enum.UserInputType.Keyboard then
+                -- VIEW TIME - Volver a formato corto
                 if input.KeyCode == currentViewTimeKey then
                     viewTimePressed = false
                     if expiryLabelRef and shortExpiryText ~= "" then
@@ -843,7 +864,7 @@ function Settings.build(page, r)
             return tostring(exp)
         end
 
-        -- Guardar ambas versiones
+        -- Guardar ambas versiones en las variables globales
         shortExpiryText = formatExpiryShort(expiry)
         fullExpiryText = formatExpiryFull(expiry)
 
@@ -860,11 +881,9 @@ function Settings.build(page, r)
             Padding = UDim.new(0, 8), SortOrder = Enum.SortOrder.LayoutOrder,
         }, gridRow)
 
-        local function makeCompactField(parent, label, value, icon, isPassword, lo, overrideColor, isExpiry)
-            -- Si es el campo EXPIRY, hacerlo más ancho
-            local fieldWidth = isExpiry and UDim2.new(0.4, -6, 1, 0) or UDim2.new(0.3, -6, 1, 0)
+        local function makeCompactField(parent, label, value, icon, isPassword, lo, overrideColor)
             local container = mk("Frame", {
-                Size = fieldWidth,
+                Size = UDim2.new(0.333, -6, 1, 0),
                 BackgroundTransparency = 1, LayoutOrder = lo,
             }, parent)
             mk("TextLabel", {
@@ -894,17 +913,13 @@ function Settings.build(page, r)
                 table.insert(accentEls, { el = img, prop = "ImageColor3" })
             end
             local displayText = isPassword and string.rep("•", math.min(#value, 18)) or value
-            -- Si es EXPIRY, usar texto más pequeño para que quepa todo
-            local fontSize = isExpiry and 7 or 8
             local textLbl = mk("TextLabel", {
-                Text = displayText, Font = Enum.Font.Code, TextSize = fontSize,
+                Text = displayText, Font = Enum.Font.Code, TextSize = 8,
                 TextColor3 = overrideColor or C.WHITE, BackgroundTransparency = 1,
                 Size = UDim2.new(1, icon and -54 or -10, 1, 0),
                 Position = UDim2.new(0, icon and 36 or 8, 0, 0),
                 TextXAlignment = Enum.TextXAlignment.Left,
-                TextTruncate = isExpiry and Enum.TextTruncate.None or Enum.TextTruncate.AtEnd,
-                TextScaled = isExpiry and false or false,
-                ZIndex = 6,
+                TextTruncate = Enum.TextTruncate.AtEnd, ZIndex = 6,
             }, box)
             if isPassword then
                 local showKey = false
@@ -931,10 +946,10 @@ function Settings.build(page, r)
             return textLbl
         end
 
-        makeCompactField(gridRow, "USERNAME", username,              "rbxassetid://75066739039083",  false, 1, nil, false)
-        makeCompactField(gridRow, "KEY",      key,                   "rbxassetid://126448589402910", true,  2, nil, false)
-        -- Guardar referencia al label de EXPIRY con isExpiry = true para que sea más ancho
-        expiryLabelRef = makeCompactField(gridRow, "EXPIRY", shortExpiryText, "rbxassetid://78475382175834", false, 3, expiryColor, true)
+        makeCompactField(gridRow, "USERNAME", username,              "rbxassetid://75066739039083",  false, 1, nil)
+        makeCompactField(gridRow, "KEY",      key,                   "rbxassetid://126448589402910", true,  2, nil)
+        -- Guardar referencia al label de EXPIRY y mostrar formato corto por defecto
+        expiryLabelRef = makeCompactField(gridRow, "EXPIRY", shortExpiryText, "rbxassetid://78475382175834", false, 3, expiryColor)
     end
 
     task.delay(1, function()
