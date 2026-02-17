@@ -844,17 +844,20 @@ function Settings.build(page, r)
             BackgroundTransparency = 1, LayoutOrder = SO(),
         }, page)
         mk("UIListLayout", {
-            FillDirection       = Enum.FillDirection.Horizontal,
-            Padding             = UDim.new(0, 10),
-            SortOrder           = Enum.SortOrder.LayoutOrder,
-            HorizontalAlignment = Enum.HorizontalAlignment.Center,
+            FillDirection = Enum.FillDirection.Horizontal,
+            Padding       = UDim.new(0, 10),
+            SortOrder     = Enum.SortOrder.LayoutOrder,
         }, topRow)
 
-        local customPanel = MiniPanel(topRow, "Custom Panel", 248)
+        local customPanel = MiniPanel(topRow, "Custom Panel", nil)
+        customPanel.Parent.Size = UDim2.new(0.5, -5, 0, 0)
+        customPanel.Parent.AutomaticSize = Enum.AutomaticSize.Y
         CreateAccentPicker(customPanel)
         CreateFontPicker(customPanel)
 
-        local keybindPanel = MiniPanel(topRow, "Keybinds", 248)
+        local keybindPanel = MiniPanel(topRow, "Keybinds", nil)
+        keybindPanel.Parent.Size = UDim2.new(0.5, -5, 0, 0)
+        keybindPanel.Parent.AutomaticSize = Enum.AutomaticSize.Y
         CreateKeybinds(keybindPanel)
 
         -- Panel Info Sesion con badge "✓ Verified" en la barra del título
