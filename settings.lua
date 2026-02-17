@@ -30,38 +30,39 @@ Settings.Layout = {
 }
 
 -- ── Helper: actualiza el badge según expiry ───────────────────
--- Si expiry es un timestamp y quedan MÁS de 3 meses → Admin (blanco/gris)
--- Si quedan 3 meses o menos, o no hay dato válido   → Verified (verde)
+-- Si expiry es timestamp y quedan MÁS de 3 meses → Admin (blanco)
+-- Si quedan 3 meses o menos, o no hay dato válido  → Verified (verde)
 local function applyBadgeStyle(verifiedBadge, verifiedStroke, verifiedLabel, expiry)
     if not verifiedBadge or not verifiedStroke or not verifiedLabel then return end
 
-    local ts = tonumber(expiry)
-    local isAdmin = false
-
-    if ts then
-        local now         = os.time()
-        local threeMonths = 60 * 60 * 24 * 90  -- 90 días en segundos
-        -- Si la expiración está a más de 3 meses del momento actual → Admin
-        if (ts - now) > threeMonths then
-            isAdmin = true
-        end
-    end
+    local ts      = tonumber(expiry)
+    local isAdmin = ts and ((ts - os.time()) > 60 * 60 * 24 * 90)
 
     if isAdmin then
-        -- Estilo Admin: fondo gris oscuro, borde blanco suave, texto blanco
         verifiedBadge.BackgroundColor3 = Color3.fromRGB(28, 28, 28)
         verifiedStroke.Color           = Color3.fromRGB(180, 180, 180)
         verifiedStroke.Transparency    = 0.4
         verifiedLabel.Text             = "⭐  Admin"
         verifiedLabel.TextColor3       = Color3.fromRGB(235, 235, 235)
     else
-        -- Estilo Verified: fondo verde oscuro, borde verde, texto verde
         verifiedBadge.BackgroundColor3 = Color3.fromRGB(16, 42, 16)
         verifiedStroke.Color           = Color3.fromRGB(40, 180, 70)
         verifiedStroke.Transparency    = 0.3
         verifiedLabel.Text             = "✓  Verified"
         verifiedLabel.TextColor3       = Color3.fromRGB(60, 210, 90)
     end
+end
+
+-- ── Helper: leer expiry del archivo guardado ─────────────────
+local function readSavedExpiry()
+    local canRead = typeof(readfile) == "function" and typeof(isfile) == "function"
+    if not canRead then return nil end
+    local ok, result = pcall(function()
+        if not isfile("serios_saved.json") then return nil end
+        return HttpService:JSONDecode(readfile("serios_saved.json"))
+    end)
+    if ok and result then return result.expiry end
+    return nil
 end
 
 function Settings.build(page, r)
@@ -77,10 +78,14 @@ function Settings.build(page, r)
     local title1   = r.title1
     local title3   = r.title3
 
-    -- Referencias del badge (pasadas desde main.lua)
     local verifiedBadge  = r.verifiedBadge
     local verifiedStroke = r.verifiedStroke
     local verifiedLabel  = r.verifiedLabel
+
+    -- ── Aplicar badge INMEDIATAMENTE, sin ningún delay ───────
+    -- Se lee el archivo aquí mismo, antes de construir la UI
+    local savedExpiry = readSavedExpiry()
+    applyBadgeStyle(verifiedBadge, verifiedStroke, verifiedLabel, savedExpiry)
 
     local accentEls = {}
     local so = 0
@@ -645,14 +650,12 @@ function Settings.build(page, r)
                 Size = UDim2.new(1, 0, 0, 28),
                 BackgroundTransparency = 1, LayoutOrder = lo or SO(),
             }, parent)
-
             mk("TextLabel", {
                 Text = labelText, Font = Enum.Font.GothamSemibold, TextSize = 10,
                 TextColor3 = C.WHITE, BackgroundTransparency = 1,
                 Size = UDim2.new(1, -52, 1, 0),
                 TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 5,
             }, row)
-
             local keyBg = mk("Frame", {
                 Size = UDim2.new(0, 46, 0, 20),
                 Position = UDim2.new(1, -46, 0.5, -10),
@@ -661,22 +664,18 @@ function Settings.build(page, r)
             }, row)
             rnd(5, keyBg)
             mk("UIStroke", { Color = C.LINE, Thickness = 1, Transparency = 0.2 }, keyBg)
-
             local keyLbl = mk("TextLabel", {
                 Text = keyName(defaultKey), Font = Enum.Font.GothamBold, TextSize = 9,
                 TextColor3 = C.WHITE, BackgroundTransparency = 1,
                 Size = UDim2.new(1, 0, 1, 0), ZIndex = 6,
                 TextXAlignment = Enum.TextXAlignment.Center,
             }, keyBg)
-
             local keyBtn = mk("TextButton", {
                 Text = "", BackgroundTransparency = 1,
                 Size = UDim2.new(1, 0, 1, 0), ZIndex = 7, AutoButtonColor = false,
             }, keyBg)
-
             keyBtn.MouseEnter:Connect(function() tw(keyBg, .1, { BackgroundColor3 = Color3.fromRGB(32, 32, 32) }) end)
             keyBtn.MouseLeave:Connect(function() tw(keyBg, .1, { BackgroundColor3 = Color3.fromRGB(24, 24, 24) }) end)
-
             return keyBg, keyLbl, keyBtn
         end
 
@@ -688,13 +687,11 @@ function Settings.build(page, r)
             if minListenConn then minListenConn:Disconnect() end
             minListenConn = UIS.InputBegan:Connect(function(input, gpe)
                 if input.UserInputType ~= Enum.UserInputType.Keyboard then return end
-                minListening = false
-                currentMinKey = input.KeyCode
+                minListening = false; currentMinKey = input.KeyCode
                 justAssignedMin = true
                 task.delay(0.1, function() justAssignedMin = false end)
                 if minListenConn then minListenConn:Disconnect(); minListenConn = nil end
-                minKeyLbl.Text = keyName(currentMinKey)
-                minKeyLbl.TextColor3 = C.WHITE
+                minKeyLbl.Text = keyName(currentMinKey); minKeyLbl.TextColor3 = C.WHITE
                 tw(minKeyBg, .08, { BackgroundColor3 = Color3.fromRGB(20, 50, 20) })
                 task.delay(.35, function() tw(minKeyBg, .2, { BackgroundColor3 = Color3.fromRGB(24, 24, 24) }) end)
             end)
@@ -704,8 +701,7 @@ function Settings.build(page, r)
             if minListening then return end
             minListening = true
             tw(minKeyBg, .1, { BackgroundColor3 = Color3.fromRGB(50, 35, 10) })
-            minKeyLbl.Text = "···"
-            minKeyLbl.TextColor3 = C.GRAY
+            minKeyLbl.Text = "···"; minKeyLbl.TextColor3 = C.GRAY
             startMinListening()
         end)
 
@@ -717,13 +713,11 @@ function Settings.build(page, r)
             if closeListenConn then closeListenConn:Disconnect() end
             closeListenConn = UIS.InputBegan:Connect(function(input, gpe)
                 if input.UserInputType ~= Enum.UserInputType.Keyboard then return end
-                closeListening = false
-                currentCloseKey = input.KeyCode
+                closeListening = false; currentCloseKey = input.KeyCode
                 justAssignedClose = true
                 task.delay(0.1, function() justAssignedClose = false end)
                 if closeListenConn then closeListenConn:Disconnect(); closeListenConn = nil end
-                closeKeyLbl.Text = keyName(currentCloseKey)
-                closeKeyLbl.TextColor3 = C.WHITE
+                closeKeyLbl.Text = keyName(currentCloseKey); closeKeyLbl.TextColor3 = C.WHITE
                 tw(closeKeyBg, .08, { BackgroundColor3 = Color3.fromRGB(20, 50, 20) })
                 task.delay(.35, function() tw(closeKeyBg, .2, { BackgroundColor3 = Color3.fromRGB(24, 24, 24) }) end)
             end)
@@ -733,8 +727,7 @@ function Settings.build(page, r)
             if closeListening then return end
             closeListening = true
             tw(closeKeyBg, .1, { BackgroundColor3 = Color3.fromRGB(50, 35, 10) })
-            closeKeyLbl.Text = "···"
-            closeKeyLbl.TextColor3 = C.GRAY
+            closeKeyLbl.Text = "···"; closeKeyLbl.TextColor3 = C.GRAY
             startCloseListening()
         end)
 
@@ -747,13 +740,11 @@ function Settings.build(page, r)
             if sesionListenConn then sesionListenConn:Disconnect() end
             sesionListenConn = UIS.InputBegan:Connect(function(input, gpe)
                 if input.UserInputType ~= Enum.UserInputType.Keyboard then return end
-                sesionListening = false
-                currentSesionKey = input.KeyCode
+                sesionListening = false; currentSesionKey = input.KeyCode
                 justAssignedSesion = true
                 task.delay(0.1, function() justAssignedSesion = false end)
                 if sesionListenConn then sesionListenConn:Disconnect(); sesionListenConn = nil end
-                sesionKeyLbl.Text = keyName(currentSesionKey)
-                sesionKeyLbl.TextColor3 = C.WHITE
+                sesionKeyLbl.Text = keyName(currentSesionKey); sesionKeyLbl.TextColor3 = C.WHITE
                 tw(sesionKeyBg, .08, { BackgroundColor3 = Color3.fromRGB(20, 50, 20) })
                 task.delay(.35, function() tw(sesionKeyBg, .2, { BackgroundColor3 = Color3.fromRGB(24, 24, 24) }) end)
             end)
@@ -763,8 +754,7 @@ function Settings.build(page, r)
             if sesionListening then return end
             sesionListening = true
             tw(sesionKeyBg, .1, { BackgroundColor3 = Color3.fromRGB(50, 35, 10) })
-            sesionKeyLbl.Text = "···"
-            sesionKeyLbl.TextColor3 = C.GRAY
+            sesionKeyLbl.Text = "···"; sesionKeyLbl.TextColor3 = C.GRAY
             startSesionListening()
         end)
 
@@ -797,46 +787,15 @@ function Settings.build(page, r)
     end
 
     -- ── INFO SESION ───────────────────────────────────────────
-    local function CreateSessionInfo(parent, rawExpiry)
-        local SAVE_FILE = "serios_saved.json"
-        local canRead = typeof(readfile) == "function" and typeof(isfile) == "function"
-
-        local function loadSessionInfo()
-            if not canRead then return "N/A", "N/A", "N/A" end
-            local ok, result = pcall(function()
-                if not isfile(SAVE_FILE) then return nil end
-                return HttpService:JSONDecode(readfile(SAVE_FILE))
-            end)
-            if ok and result and result.username and result.key then
-                return result.username, result.key, result.expiry or "N/A"
-            end
-            return "Not Found", "Not Found", "N/A"
-        end
-
-        local username, key, expiry = loadSessionInfo()
-
-        -- ── Actualizar badge según expiry ─────────────────────
-        applyBadgeStyle(verifiedBadge, verifiedStroke, verifiedLabel, expiry)
-
-        local function formatExpiry(exp)
-            if exp == "N/A" or exp == "Not Found" then return "N/A" end
-            local ts = tonumber(exp)
-            if ts then
-                local d = os.date("*t", ts)
-                return string.format("%02d/%02d/%04d, %02d:%02d:%02d",
-                    d.day, d.month, d.year, d.hour, d.min, d.sec)
-            end
-            return tostring(exp)
-        end
-
-        local expiryText = formatExpiry(expiry)
-
-        -- Determinar si es Admin para colorear el campo Expiry
-        local ts         = tonumber(expiry)
-        local isAdmin    = ts and ((ts - os.time()) > 60 * 60 * 24 * 90)
+    local function CreateSessionInfo(parent, sessionData)
+        local username   = sessionData.username
+        local key        = sessionData.key
+        local expiry     = sessionData.expiry
+        local expiryText = sessionData.expiryText
+        local isAdmin    = sessionData.isAdmin
         local expiryColor = isAdmin
-            and Color3.fromRGB(235, 235, 235)   -- blanco si Admin
-            or  Color3.fromRGB(60,  210,  90)   -- verde si Verified
+            and Color3.fromRGB(235, 235, 235)
+            or  Color3.fromRGB(60,  210,  90)
 
         local gridRow = mk("Frame", {
             Size = UDim2.new(1, 0, 0, 44), BackgroundTransparency = 1, LayoutOrder = SO(),
@@ -851,14 +810,12 @@ function Settings.build(page, r)
                 Size = UDim2.new(0.333, -6, 1, 0),
                 BackgroundTransparency = 1, LayoutOrder = lo,
             }, parent)
-
             mk("TextLabel", {
                 Text = label, Font = Enum.Font.GothamBold, TextSize = 8,
                 TextColor3 = C.GRAY, BackgroundTransparency = 1,
                 Size = UDim2.new(1, 0, 0, 12),
                 TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 5,
             }, container)
-
             local box = mk("Frame", {
                 Size = UDim2.new(1, 0, 0, 28), Position = UDim2.new(0, 0, 0, 14),
                 BackgroundColor3 = Color3.fromRGB(16, 16, 16),
@@ -866,13 +823,10 @@ function Settings.build(page, r)
             }, container)
             rnd(6, box)
             mk("UIStroke", { Color = C.LINE, Thickness = 1, Transparency = 0.4 }, box)
-
             if icon then
                 mk("Frame", {
-                    Size = UDim2.new(0, 1, 0, 14),
-                    Position = UDim2.new(0, 28, 0.5, -7),
-                    BackgroundColor3 = C.LINE,
-                    BackgroundTransparency = 0.3,
+                    Size = UDim2.new(0, 1, 0, 14), Position = UDim2.new(0, 28, 0.5, -7),
+                    BackgroundColor3 = C.LINE, BackgroundTransparency = 0.3,
                     BorderSizePixel = 0, ZIndex = 7,
                 }, box)
                 local img = mk("ImageLabel", {
@@ -882,7 +836,6 @@ function Settings.build(page, r)
                 }, box)
                 table.insert(accentEls, { el = img, prop = "ImageColor3" })
             end
-
             local displayText = isPassword and string.rep("•", math.min(#value, 18)) or value
             local textLbl = mk("TextLabel", {
                 Text = displayText, Font = Enum.Font.Code, TextSize = 8,
@@ -892,7 +845,6 @@ function Settings.build(page, r)
                 TextXAlignment = Enum.TextXAlignment.Left,
                 TextTruncate = Enum.TextTruncate.AtEnd, ZIndex = 6,
             }, box)
-
             if isPassword then
                 local showKey = false
                 local eyeBtn = mk("TextButton", {
@@ -922,6 +874,47 @@ function Settings.build(page, r)
         makeCompactField(gridRow, "EXPIRY",   expiryText, "rbxassetid://78475382175834",  false, 3, expiryColor)
     end
 
+    -- ── Leer sesión una sola vez aquí (sin delay) ─────────────
+    local SAVE_FILE = "serios_saved.json"
+    local canRead   = typeof(readfile) == "function" and typeof(isfile) == "function"
+
+    local sessionUsername, sessionKey, sessionExpiry = "N/A", "N/A", "N/A"
+    if canRead then
+        local ok, result = pcall(function()
+            if not isfile(SAVE_FILE) then return nil end
+            return HttpService:JSONDecode(readfile(SAVE_FILE))
+        end)
+        if ok and result and result.username and result.key then
+            sessionUsername = result.username
+            sessionKey      = result.key
+            sessionExpiry   = result.expiry or "N/A"
+        else
+            sessionUsername = "Not Found"
+            sessionKey      = "Not Found"
+        end
+    end
+
+    local function formatExpiry(exp)
+        if exp == "N/A" or exp == "Not Found" then return "N/A" end
+        local ts = tonumber(exp)
+        if ts then
+            local d = os.date("*t", ts)
+            return string.format("%02d/%02d/%04d, %02d:%02d:%02d",
+                d.day, d.month, d.year, d.hour, d.min, d.sec)
+        end
+        return tostring(exp)
+    end
+
+    local sessionTs      = tonumber(sessionExpiry)
+    local sessionIsAdmin = sessionTs and ((sessionTs - os.time()) > 60 * 60 * 24 * 90)
+    local sessionData    = {
+        username    = sessionUsername,
+        key         = sessionKey,
+        expiry      = sessionExpiry,
+        expiryText  = formatExpiry(sessionExpiry),
+        isAdmin     = sessionIsAdmin,
+    }
+
     task.delay(1, function()
         mk("UIListLayout", {
             Padding   = UDim.new(0, 10),
@@ -949,11 +942,8 @@ function Settings.build(page, r)
         customPanel.Parent.AutomaticSize = Enum.AutomaticSize.Y
         mk("ImageLabel", {
             Image = "rbxassetid://79986513204084",
-            Size = UDim2.new(0, 18, 0, 18),
-            Position = UDim2.new(1, -26, 0, 7),
-            BackgroundTransparency = 1,
-            ImageColor3 = Color3.fromRGB(70, 70, 70),
-            ZIndex = 6,
+            Size = UDim2.new(0, 18, 0, 18), Position = UDim2.new(1, -26, 0, 7),
+            BackgroundTransparency = 1, ImageColor3 = Color3.fromRGB(70, 70, 70), ZIndex = 6,
         }, customPanel.Parent)
         CreateAccentPicker(customPanel)
         CreateFontPicker(customPanel)
@@ -963,42 +953,36 @@ function Settings.build(page, r)
         keybindPanel.Parent.AutomaticSize = Enum.AutomaticSize.Y
         mk("ImageLabel", {
             Image = "rbxassetid://75198932068107",
-            Size = UDim2.new(0, 18, 0, 18),
-            Position = UDim2.new(1, -26, 0, 7),
-            BackgroundTransparency = 1,
-            ImageColor3 = Color3.fromRGB(70, 70, 70),
-            ZIndex = 6,
+            Size = UDim2.new(0, 18, 0, 18), Position = UDim2.new(1, -26, 0, 7),
+            BackgroundTransparency = 1, ImageColor3 = Color3.fromRGB(70, 70, 70), ZIndex = 6,
         }, keybindPanel.Parent)
         CreateKeybinds(keybindPanel)
 
-        -- Panel Info Sesion
         local sessionOuterPanel = mk("Frame", {
             Size = UDim2.new(1, 0, 0, 0), AutomaticSize = Enum.AutomaticSize.Y,
             BackgroundColor3 = C.PANEL, BorderSizePixel = 0, LayoutOrder = SO(),
         }, page)
         rnd(8, sessionOuterPanel)
         mk("UIStroke", { Color = C.LINE, Thickness = 1, Transparency = 0.5 }, sessionOuterPanel)
-
         mk("TextLabel", {
             Text = "Info Sesion", Font = Enum.Font.GothamBold, TextSize = 11,
             TextColor3 = C.WHITE, BackgroundTransparency = 1,
             Size = UDim2.new(1, -16, 0, 32), Position = UDim2.new(0, 10, 0, 0),
             TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 5,
         }, sessionOuterPanel)
-
         mk("Frame", {
             Size = UDim2.new(1, 0, 0, 1), Position = UDim2.new(0, 0, 0, 32),
             BackgroundColor3 = C.LINE, BackgroundTransparency = 0.4,
             BorderSizePixel = 0, ZIndex = 4,
         }, sessionOuterPanel)
-
         local sessionContent = mk("Frame", {
             Size = UDim2.new(1, -20, 0, 0), Position = UDim2.new(0, 10, 0, 42),
             AutomaticSize = Enum.AutomaticSize.Y, BackgroundTransparency = 1,
         }, sessionOuterPanel)
         mk("UIPadding", { PaddingBottom = UDim.new(0, 12) }, sessionOuterPanel)
 
-        CreateSessionInfo(sessionContent)
+        -- Pasar sessionData ya calculado, sin leer el archivo de nuevo
+        CreateSessionInfo(sessionContent, sessionData)
     end)
 end
 
