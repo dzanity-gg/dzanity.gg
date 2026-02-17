@@ -10,7 +10,7 @@ Settings.C = {
     WIN    = Color3.fromRGB(18,  18,  18),
     TBAR   = Color3.fromRGB(13,  13,  13),
     LINE   = Color3.fromRGB(42,  42,  42),
-    RED    = Color3.fromRGB(205, 30,  30),
+    RED    = Color3.fromRGB(255, 255, 255),  -- Cambiado a blanco
     NAV    = Color3.fromRGB(11,  11,  11),
     NAVPIL = Color3.fromRGB(28,  28,  28),
     WHITE  = Color3.fromRGB(235, 235, 235),
@@ -49,6 +49,11 @@ function Settings.build(page, r)
     local accentEls = {}
     local so = 0
     local function SO() so = so + 1; return so end
+
+    -- Variables globales para el View Time
+    local expiryLabelRef = nil
+    local fullExpiryText = ""
+    local shortExpiryText = ""
 
     local function makeCheckbox(parent, zBase)
         zBase = zBase or 5
@@ -575,7 +580,7 @@ function Settings.build(page, r)
         }, parent)
         mk("UIListLayout", { Padding = UDim.new(0, 6), SortOrder = Enum.SortOrder.LayoutOrder }, root)
 
-        local justAssignedMin, justAssignedClose = false, false
+        local justAssignedMin, justAssignedClose, justAssignedSesion, justAssignedViewTime = false, false, false, false
 
         local function keyName(kc)
             local names = {
@@ -584,7 +589,7 @@ function Settings.build(page, r)
                 [Enum.KeyCode.LeftShift]    = "L.Shft",
                 [Enum.KeyCode.RightShift]   = "R.Shft",
                 [Enum.KeyCode.LeftAlt]      = "L.Alt",
-                [Enum.KeyCode.RightAlt]     = "R.Alt",
+                [Enum.KeyCode.RightAlt]     = "AltGr",
                 [Enum.KeyCode.Tab]          = "Tab",
                 [Enum.KeyCode.CapsLock]     = "Caps",
                 [Enum.KeyCode.Insert]       = "Ins",
@@ -693,7 +698,6 @@ function Settings.build(page, r)
         makeSectionLabel(root, "CLOSE SESION", 5)
         local sesionKeyBg, sesionKeyLbl, sesionKeyBtn = makeKeyRow(root, "Close Sesion", Enum.KeyCode.RightControl, 6)
         local sesionListening, currentSesionKey, sesionListenConn = false, Enum.KeyCode.RightControl, nil
-        local justAssignedSesion = false
 
         local function startSesionListening()
             if sesionListenConn then sesionListenConn:Disconnect() end
@@ -717,8 +721,39 @@ function Settings.build(page, r)
             startSesionListening()
         end)
 
+        -- ══════════════════════════════════════════════════════════════
+        -- NUEVO: VIEW TIME - Mostrar tiempo completo de expiración
+        -- ══════════════════════════════════════════════════════════════
+        makeSectionLabel(root, "VIEW TIME", 7)
+        local viewTimeKeyBg, viewTimeKeyLbl, viewTimeKeyBtn = makeKeyRow(root, "View Time", Enum.KeyCode.RightAlt, 8)
+        local viewTimeListening, currentViewTimeKey, viewTimeListenConn = false, Enum.KeyCode.RightAlt, nil
+
+        local function startViewTimeListening()
+            if viewTimeListenConn then viewTimeListenConn:Disconnect() end
+            viewTimeListenConn = UIS.InputBegan:Connect(function(input, gpe)
+                if input.UserInputType ~= Enum.UserInputType.Keyboard then return end
+                viewTimeListening = false; currentViewTimeKey = input.KeyCode
+                justAssignedViewTime = true
+                task.delay(0.1, function() justAssignedViewTime = false end)
+                if viewTimeListenConn then viewTimeListenConn:Disconnect(); viewTimeListenConn = nil end
+                viewTimeKeyLbl.Text = keyName(currentViewTimeKey); viewTimeKeyLbl.TextColor3 = C.WHITE
+                tw(viewTimeKeyBg, .08, { BackgroundColor3 = Color3.fromRGB(20, 50, 20) })
+                task.delay(.35, function() tw(viewTimeKeyBg, .2, { BackgroundColor3 = Color3.fromRGB(24, 24, 24) }) end)
+            end)
+        end
+
+        viewTimeKeyBtn.MouseButton1Click:Connect(function()
+            if viewTimeListening then return end
+            viewTimeListening = true
+            tw(viewTimeKeyBg, .1, { BackgroundColor3 = Color3.fromRGB(50, 35, 10) })
+            viewTimeKeyLbl.Text = "···"; viewTimeKeyLbl.TextColor3 = C.GRAY
+            startViewTimeListening()
+        end)
+
+        -- Listener para las teclas principales (minimize, close, sesion, viewTime)
+        local viewTimePressed = false
         local toggleConn = UIS.InputBegan:Connect(function(input, gpe)
-            if gpe or minListening or closeListening or sesionListening then return end
+            if gpe or minListening or closeListening or sesionListening or viewTimeListening then return end
             if input.UserInputType == Enum.UserInputType.Keyboard then
                 if input.KeyCode == currentMinKey and not justAssignedMin then
                     if r.anim and r.anim.toggleMinimize then r.anim.toggleMinimize() end
@@ -734,6 +769,23 @@ function Settings.build(page, r)
                         end)
                     end)
                 end
+                if input.KeyCode == currentViewTimeKey and not justAssignedViewTime then
+                    viewTimePressed = true
+                    if expiryLabelRef and fullExpiryText ~= "" then
+                        expiryLabelRef.Text = fullExpiryText
+                    end
+                end
+            end
+        end)
+
+        local toggleConnRelease = UIS.InputEnded:Connect(function(input)
+            if input.UserInputType == Enum.UserInputType.Keyboard then
+                if input.KeyCode == currentViewTimeKey then
+                    viewTimePressed = false
+                    if expiryLabelRef and shortExpiryText ~= "" then
+                        expiryLabelRef.Text = shortExpiryText
+                    end
+                end
             end
         end)
 
@@ -741,7 +793,9 @@ function Settings.build(page, r)
             if minListenConn   then minListenConn:Disconnect()   end
             if closeListenConn then closeListenConn:Disconnect() end
             if sesionListenConn then sesionListenConn:Disconnect() end
+            if viewTimeListenConn then viewTimeListenConn:Disconnect() end
             if toggleConn then toggleConn:Disconnect() end
+            if toggleConnRelease then toggleConnRelease:Disconnect() end
         end)
     end
 
@@ -766,7 +820,19 @@ function Settings.build(page, r)
             end
         end
 
-        local function formatExpiry(exp)
+        -- Función para formato corto (solo fecha)
+        local function formatExpiryShort(exp)
+            if exp == "N/A" or exp == "Not Found" then return "N/A" end
+            local ts = tonumber(exp)
+            if ts then
+                local d = os.date("*t", ts)
+                return string.format("%02d/%02d/%04d", d.day, d.month, d.year)
+            end
+            return tostring(exp)
+        end
+
+        -- Función para formato completo (fecha + hora)
+        local function formatExpiryFull(exp)
             if exp == "N/A" or exp == "Not Found" then return "N/A" end
             local ts = tonumber(exp)
             if ts then
@@ -776,6 +842,10 @@ function Settings.build(page, r)
             end
             return tostring(exp)
         end
+
+        -- Guardar ambas versiones
+        shortExpiryText = formatExpiryShort(expiry)
+        fullExpiryText = formatExpiryFull(expiry)
 
         -- Color del campo EXPIRY: blanco si Admin, verde si Verified
         local expiryColor = isAdmin
@@ -852,11 +922,13 @@ function Settings.build(page, r)
                     if not showKey then tw(eyeBtn, 0.1, { TextColor3 = C.MUTED }) end
                 end)
             end
+            return textLbl
         end
 
         makeCompactField(gridRow, "USERNAME", username,              "rbxassetid://75066739039083",  false, 1, nil)
         makeCompactField(gridRow, "KEY",      key,                   "rbxassetid://126448589402910", true,  2, nil)
-        makeCompactField(gridRow, "EXPIRY",   formatExpiry(expiry),  "rbxassetid://78475382175834",  false, 3, expiryColor)
+        -- Guardar referencia al label de EXPIRY
+        expiryLabelRef = makeCompactField(gridRow, "EXPIRY", shortExpiryText, "rbxassetid://78475382175834", false, 3, expiryColor)
     end
 
     task.delay(1, function()
