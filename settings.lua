@@ -869,23 +869,6 @@ function Settings.build(page, r)
     end
 
     task.delay(1, function()
-        -- Ocultar "Base Panel" y poner badge ✓ Verified en su lugar
-        local verifiedInBar = mk("Frame", {
-            Size     = UDim2.new(0, 80, 0, 20),
-            Position = title3.Position,
-            AnchorPoint = title3.AnchorPoint,
-            BackgroundColor3 = Color3.fromRGB(16, 42, 16),
-            BorderSizePixel = 0, ZIndex = title3.ZIndex,
-        }, title3.Parent)
-        rnd(5, verifiedInBar)
-        mk("UIStroke", { Color = Color3.fromRGB(40, 180, 70), Thickness = 1, Transparency = 0.35 }, verifiedInBar)
-        mk("TextLabel", {
-            Text = "✓  Verified", Font = Enum.Font.GothamBold, TextSize = 9,
-            TextColor3 = Color3.fromRGB(60, 210, 90),
-            BackgroundTransparency = 1, Size = UDim2.new(1, 0, 1, 0),
-            ZIndex = title3.ZIndex + 1, TextXAlignment = Enum.TextXAlignment.Center,
-        }, verifiedInBar)
-        title3.Visible = false
         mk("UIListLayout", {
             Padding   = UDim.new(0, 10),
             SortOrder = Enum.SortOrder.LayoutOrder,
