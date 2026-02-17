@@ -109,7 +109,7 @@ end
 local title1 = tlbl("serios.gg", Enum.Font.GothamBold, 13, C.WHITE,  30,  80)
 local title2 = tlbl("|",          Enum.Font.GothamBold, 16, C.RED,   113,  14)
 
--- Badge ✓ Verified en lugar de "Base Panel"
+-- Badge ✓ Verified
 local verifiedBadge = mk("Frame", {
     Size             = UDim2.new(0, 84, 0, 22),
     Position         = UDim2.new(0, 129, 0.5, -11),
@@ -125,7 +125,7 @@ mk("TextLabel", {
     ZIndex = 9, TextXAlignment = Enum.TextXAlignment.Center,
 }, verifiedBadge)
 
--- title3 = nil (ya no existe "Base Panel")
+-- title3 = nil (no existe "Base Panel")
 local title3 = nil
 
 local title4 = tlbl("|",      Enum.Font.GothamBold, 14, C.MUTED, 225,  14)
@@ -316,7 +316,7 @@ local anim = Animations.init({
     WinStroke = WinStroke,  NavStroke = NavStroke,
     navT      = navT,       actNavFn  = getActNav,
     rdot      = rdot,
-    title1    = title1,     title2    = title2,    title3    = nil,
+    title1    = title1,     title2    = title2,    title3    = nil,   -- title3 es nil (badge Frame, no TextLabel)
     title4    = title4,     title5    = title5,
     MinB      = MinB,       ClsB      = ClsB,
     SG        = SG,
