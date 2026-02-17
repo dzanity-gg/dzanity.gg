@@ -29,6 +29,41 @@ Settings.Layout = {
     BH   = 440 - 42,
 }
 
+-- ── Helper: actualiza el badge según expiry ───────────────────
+-- Si expiry es un timestamp y quedan MÁS de 3 meses → Admin (blanco/gris)
+-- Si quedan 3 meses o menos, o no hay dato válido   → Verified (verde)
+local function applyBadgeStyle(verifiedBadge, verifiedStroke, verifiedLabel, expiry)
+    if not verifiedBadge or not verifiedStroke or not verifiedLabel then return end
+
+    local ts = tonumber(expiry)
+    local isAdmin = false
+
+    if ts then
+        local now         = os.time()
+        local threeMonths = 60 * 60 * 24 * 90  -- 90 días en segundos
+        -- Si la expiración está a más de 3 meses del momento actual → Admin
+        if (ts - now) > threeMonths then
+            isAdmin = true
+        end
+    end
+
+    if isAdmin then
+        -- Estilo Admin: fondo gris oscuro, borde blanco suave, texto blanco
+        verifiedBadge.BackgroundColor3 = Color3.fromRGB(28, 28, 28)
+        verifiedStroke.Color           = Color3.fromRGB(180, 180, 180)
+        verifiedStroke.Transparency    = 0.4
+        verifiedLabel.Text             = "⭐  Admin"
+        verifiedLabel.TextColor3       = Color3.fromRGB(235, 235, 235)
+    else
+        -- Estilo Verified: fondo verde oscuro, borde verde, texto verde
+        verifiedBadge.BackgroundColor3 = Color3.fromRGB(16, 42, 16)
+        verifiedStroke.Color           = Color3.fromRGB(40, 180, 70)
+        verifiedStroke.Transparency    = 0.3
+        verifiedLabel.Text             = "✓  Verified"
+        verifiedLabel.TextColor3       = Color3.fromRGB(60, 210, 90)
+    end
+end
+
 function Settings.build(page, r)
     local C   = Settings.C
     local mk  = r.mk
@@ -41,6 +76,11 @@ function Settings.build(page, r)
     local title2   = r.title2
     local title1   = r.title1
     local title3   = r.title3
+
+    -- Referencias del badge (pasadas desde main.lua)
+    local verifiedBadge  = r.verifiedBadge
+    local verifiedStroke = r.verifiedStroke
+    local verifiedLabel  = r.verifiedLabel
 
     local accentEls = {}
     local so = 0
@@ -527,7 +567,8 @@ function Settings.build(page, r)
                 dot.BackgroundTransparency=0
                 selLbl.Text=fd.name; selLbl.Font=fd.font
                 if checked then
-                    title1.Font=fd.font; title3.Font=fd.font
+                    title1.Font=fd.font
+                    if title3 then title3.Font=fd.font end
                     for _,t in ipairs(navT) do t.lbl.Font=fd.font end
                 end
             end)
@@ -539,10 +580,12 @@ function Settings.build(page, r)
             tw(chkBg,.15,{BackgroundColor3=checked and Color3.fromRGB(28,28,28) or Color3.fromRGB(22,22,22)})
             if checked then
                 local fd=FONTS[selFont]
-                title1.Font=fd.font; title3.Font=fd.font
+                title1.Font=fd.font
+                if title3 then title3.Font=fd.font end
                 for _,t in ipairs(navT) do t.lbl.Font=fd.font end
             else
-                title1.Font=Enum.Font.GothamBold; title3.Font=Enum.Font.Gotham
+                title1.Font=Enum.Font.GothamBold
+                if title3 then title3.Font=Enum.Font.Gotham end
                 for _,t in ipairs(navT) do t.lbl.Font=Enum.Font.GothamSemibold end
             end
         end)
@@ -746,14 +789,15 @@ function Settings.build(page, r)
         end)
 
         root.Destroying:Connect(function()
-            if minListenConn then minListenConn:Disconnect() end
+            if minListenConn  then minListenConn:Disconnect()  end
             if closeListenConn then closeListenConn:Disconnect() end
             if sesionListenConn then sesionListenConn:Disconnect() end
             if toggleConn then toggleConn:Disconnect() end
         end)
     end
 
-    local function CreateSessionInfo(parent)
+    -- ── INFO SESION ───────────────────────────────────────────
+    local function CreateSessionInfo(parent, rawExpiry)
         local SAVE_FILE = "serios_saved.json"
         local canRead = typeof(readfile) == "function" and typeof(isfile) == "function"
 
@@ -770,7 +814,10 @@ function Settings.build(page, r)
         end
 
         local username, key, expiry = loadSessionInfo()
-        
+
+        -- ── Actualizar badge según expiry ─────────────────────
+        applyBadgeStyle(verifiedBadge, verifiedStroke, verifiedLabel, expiry)
+
         local function formatExpiry(exp)
             if exp == "N/A" or exp == "Not Found" then return "N/A" end
             local ts = tonumber(exp)
@@ -781,8 +828,15 @@ function Settings.build(page, r)
             end
             return tostring(exp)
         end
-        
+
         local expiryText = formatExpiry(expiry)
+
+        -- Determinar si es Admin para colorear el campo Expiry
+        local ts         = tonumber(expiry)
+        local isAdmin    = ts and ((ts - os.time()) > 60 * 60 * 24 * 90)
+        local expiryColor = isAdmin
+            and Color3.fromRGB(235, 235, 235)   -- blanco si Admin
+            or  Color3.fromRGB(60,  210,  90)   -- verde si Verified
 
         local gridRow = mk("Frame", {
             Size = UDim2.new(1, 0, 0, 44), BackgroundTransparency = 1, LayoutOrder = SO(),
@@ -792,7 +846,7 @@ function Settings.build(page, r)
             Padding = UDim.new(0, 8), SortOrder = Enum.SortOrder.LayoutOrder,
         }, gridRow)
 
-        local function makeCompactField(parent, label, value, icon, isPassword, lo)
+        local function makeCompactField(parent, label, value, icon, isPassword, lo, overrideColor)
             local container = mk("Frame", {
                 Size = UDim2.new(0.333, -6, 1, 0),
                 BackgroundTransparency = 1, LayoutOrder = lo,
@@ -832,7 +886,7 @@ function Settings.build(page, r)
             local displayText = isPassword and string.rep("•", math.min(#value, 18)) or value
             local textLbl = mk("TextLabel", {
                 Text = displayText, Font = Enum.Font.Code, TextSize = 8,
-                TextColor3 = C.WHITE, BackgroundTransparency = 1,
+                TextColor3 = overrideColor or C.WHITE, BackgroundTransparency = 1,
                 Size = UDim2.new(1, icon and -54 or -10, 1, 0),
                 Position = UDim2.new(0, icon and 36 or 8, 0, 0),
                 TextXAlignment = Enum.TextXAlignment.Left,
@@ -863,9 +917,9 @@ function Settings.build(page, r)
             end
         end
 
-        makeCompactField(gridRow, "USERNAME", username,    "rbxassetid://75066739039083",  false, 1)
-        makeCompactField(gridRow, "KEY",      key,         "rbxassetid://126448589402910", true,  2)
-        makeCompactField(gridRow, "EXPIRY",   expiryText,  "rbxassetid://78475382175834",  false, 3)
+        makeCompactField(gridRow, "USERNAME", username,   "rbxassetid://75066739039083",  false, 1, nil)
+        makeCompactField(gridRow, "KEY",      key,        "rbxassetid://126448589402910", true,  2, nil)
+        makeCompactField(gridRow, "EXPIRY",   expiryText, "rbxassetid://78475382175834",  false, 3, expiryColor)
     end
 
     task.delay(1, function()
@@ -893,7 +947,7 @@ function Settings.build(page, r)
         local customPanel = MiniPanel(topRow, "Custom Panel", nil)
         customPanel.Parent.Size = UDim2.new(0.5, -5, 0, 0)
         customPanel.Parent.AutomaticSize = Enum.AutomaticSize.Y
-        local cpIcon = mk("ImageLabel", {
+        mk("ImageLabel", {
             Image = "rbxassetid://79986513204084",
             Size = UDim2.new(0, 18, 0, 18),
             Position = UDim2.new(1, -26, 0, 7),
@@ -907,7 +961,7 @@ function Settings.build(page, r)
         local keybindPanel = MiniPanel(topRow, "Keybinds", nil)
         keybindPanel.Parent.Size = UDim2.new(0.5, -5, 0, 0)
         keybindPanel.Parent.AutomaticSize = Enum.AutomaticSize.Y
-        local kbIcon = mk("ImageLabel", {
+        mk("ImageLabel", {
             Image = "rbxassetid://75198932068107",
             Size = UDim2.new(0, 18, 0, 18),
             Position = UDim2.new(1, -26, 0, 7),
