@@ -67,7 +67,7 @@ function Animations.init(r)
         BodyClip.Position             = UDim2.new(0, 0, 0, W.TH)
         rdot.BackgroundTransparency   = 1
 
-        -- Ocultar títulos (title3 puede ser nil)
+        -- Ocultar títulos (title3 puede ser nil, se protege)
         for _, el in ipairs({ title1, title2, title4, title5, MinB, ClsB }) do
             el.TextTransparency = 1
         end
@@ -178,7 +178,6 @@ function Animations.init(r)
                 Position = UDim2.new(0, W.WW/2, 0, W.TH),
             }, Enum.EasingStyle.Quint, Enum.EasingDirection.In)
             tw(rdot, 0.2, { BackgroundTransparency = 1 })
-            -- Animar títulos (title3 puede ser nil)
             for _, el in ipairs({ title1, title2, title4, title5, MinB, ClsB }) do
                 tw(el, 0.2, { TextTransparency = 1 })
             end
