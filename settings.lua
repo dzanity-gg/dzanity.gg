@@ -843,6 +843,7 @@ function Settings.build(page, r)
     end
 
     task.delay(1, function()
+        -- Un solo contenedor horizontal para los 3 paneles
         local topRow = mk("Frame", {
             Size = UDim2.new(1, 0, 0, 0), AutomaticSize = Enum.AutomaticSize.Y,
             BackgroundTransparency = 1, LayoutOrder = SO(),
@@ -853,6 +854,7 @@ function Settings.build(page, r)
             Padding             = UDim.new(0, 10),
             SortOrder           = Enum.SortOrder.LayoutOrder,
             HorizontalAlignment = Enum.HorizontalAlignment.Center,
+            Wraps               = true,  -- permite que el panel de sesion baje solo si no cabe
         }, topRow)
 
         local customPanel = MiniPanel(topRow, "Custom Panel", 248)
@@ -862,13 +864,8 @@ function Settings.build(page, r)
         local keybindPanel = MiniPanel(topRow, "Keybinds", 248)
         CreateKeybinds(keybindPanel)
 
-        local bottomRow = mk("Frame", {
-            Size = UDim2.new(1, 0, 0, 0), AutomaticSize = Enum.AutomaticSize.Y,
-            BackgroundTransparency = 1, LayoutOrder = SO(),
-        }, page)
-        mk("UIPadding", { PaddingLeft = UDim.new(0, 10), PaddingRight = UDim.new(0, 10) }, bottomRow)
-
-        local sessionPanel = MiniPanel(bottomRow, "Info Sesion", nil)
+        -- Panel de sesión en el mismo topRow, ocupa el ancho completo disponible
+        local sessionPanel = MiniPanel(topRow, "Info Sesion", nil)
         CreateSessionInfo(sessionPanel)
     end)
 end
