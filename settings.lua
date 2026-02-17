@@ -742,58 +742,58 @@ function Settings.build(page, r)
         end
         
         local expiryText = formatExpiry(expiry)
-        makeSectionLabel(parent, "SESSION INFORMATION", SO())
-        
-        local root = mk("Frame", {
-            Size = UDim2.new(1, 0, 0, 0), AutomaticSize = Enum.AutomaticSize.Y,
-            BackgroundTransparency = 1, LayoutOrder = SO(),
-        }, parent)
-        mk("UIListLayout", { Padding = UDim.new(0, 5), SortOrder = Enum.SortOrder.LayoutOrder }, root)
 
         local gridRow = mk("Frame", {
-            Size = UDim2.new(1, 0, 0, 50), BackgroundTransparency = 1, LayoutOrder = 1,
-        }, root)
+            Size = UDim2.new(1, 0, 0, 44), BackgroundTransparency = 1, LayoutOrder = SO(),
+        }, parent)
         mk("UIListLayout", {
             FillDirection = Enum.FillDirection.Horizontal,
-            Padding = UDim.new(0, 6), SortOrder = Enum.SortOrder.LayoutOrder,
+            Padding = UDim.new(0, 8), SortOrder = Enum.SortOrder.LayoutOrder,
         }, gridRow)
 
         local function makeCompactField(parent, label, value, icon, isPassword, lo)
             local container = mk("Frame", {
-                Size = UDim2.new(0.33, -4, 1, 0),
+                Size = UDim2.new(0.333, -6, 1, 0),
                 BackgroundTransparency = 1, LayoutOrder = lo,
             }, parent)
 
             mk("TextLabel", {
                 Text = label, Font = Enum.Font.GothamBold, TextSize = 8,
                 TextColor3 = C.GRAY, BackgroundTransparency = 1,
-                Size = UDim2.new(1, 0, 0, 10),
+                Size = UDim2.new(1, 0, 0, 12),
                 TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 5,
             }, container)
 
             local box = mk("Frame", {
-                Size = UDim2.new(1, 0, 0, 28), Position = UDim2.new(0, 0, 0, 12),
-                BackgroundColor3 = Color3.fromRGB(18, 18, 18),
+                Size = UDim2.new(1, 0, 0, 28), Position = UDim2.new(0, 0, 0, 14),
+                BackgroundColor3 = Color3.fromRGB(16, 16, 16),
                 BorderSizePixel = 0, ZIndex = 5,
             }, container)
-            rnd(5, box)
-            mk("UIStroke", { Color = C.LINE, Thickness = 1, Transparency = 0.5 }, box)
+            rnd(6, box)
+            mk("UIStroke", { Color = C.LINE, Thickness = 1, Transparency = 0.4 }, box)
 
             if icon then
+                mk("Frame", {
+                    Size = UDim2.new(0, 1, 0, 14),
+                    Position = UDim2.new(0, 28, 0.5, -7),
+                    BackgroundColor3 = C.LINE,
+                    BackgroundTransparency = 0.3,
+                    BorderSizePixel = 0, ZIndex = 7,
+                }, box)
                 local img = mk("ImageLabel", {
-                    Image = icon, Size = UDim2.new(0, 14, 0, 14),
-                    Position = UDim2.new(0, 7, 0.5, -7),
+                    Image = icon, Size = UDim2.new(0, 13, 0, 13),
+                    Position = UDim2.new(0, 8, 0.5, -6),
                     BackgroundTransparency = 1, ImageColor3 = C.RED, ZIndex = 6,
                 }, box)
                 table.insert(accentEls, { el = img, prop = "ImageColor3" })
             end
 
-            local displayText = isPassword and string.rep("•", math.min(#value, 16)) or value
+            local displayText = isPassword and string.rep("•", math.min(#value, 18)) or value
             local textLbl = mk("TextLabel", {
-                Text = displayText, Font = Enum.Font.Code, TextSize = 8,
+                Text = displayText, Font = Enum.Font.Code, TextSize = 9,
                 TextColor3 = C.WHITE, BackgroundTransparency = 1,
-                Size = UDim2.new(1, icon and -50 or -12, 1, 0),
-                Position = UDim2.new(0, icon and 26 or 6, 0, 0),
+                Size = UDim2.new(1, icon and -54 or -10, 1, 0),
+                Position = UDim2.new(0, icon and 36 or 8, 0, 0),
                 TextXAlignment = Enum.TextXAlignment.Left,
                 TextTruncate = Enum.TextTruncate.AtEnd, ZIndex = 6,
             }, box)
@@ -801,53 +801,48 @@ function Settings.build(page, r)
             if isPassword then
                 local showKey = false
                 local eyeBtn = mk("TextButton", {
-                    Text = "👁", Font = Enum.Font.Code, TextSize = 11,
-                    TextColor3 = C.GRAY, BackgroundTransparency = 1,
+                    Text = "○", Font = Enum.Font.GothamBold, TextSize = 9,
+                    TextColor3 = C.MUTED, BackgroundTransparency = 1,
                     Size = UDim2.new(0, 20, 0, 20),
                     Position = UDim2.new(1, -22, 0.5, -10),
                     ZIndex = 7, AutoButtonColor = false,
                 }, box)
-
                 eyeBtn.MouseButton1Click:Connect(function()
                     showKey = not showKey
                     textLbl.Text = showKey and value or displayText
-                    tw(eyeBtn, 0.1, { TextColor3 = showKey and C.RED or C.GRAY })
+                    eyeBtn.Text = showKey and "●" or "○"
+                    tw(eyeBtn, 0.1, { TextColor3 = showKey and C.RED or C.MUTED })
                 end)
-
-                eyeBtn.MouseEnter:Connect(function() 
-                    if not showKey then tw(eyeBtn, 0.1, { TextColor3 = C.WHITE }) end
-                end)
-                eyeBtn.MouseLeave:Connect(function() 
+                eyeBtn.MouseEnter:Connect(function()
                     if not showKey then tw(eyeBtn, 0.1, { TextColor3 = C.GRAY }) end
+                end)
+                eyeBtn.MouseLeave:Connect(function()
+                    if not showKey then tw(eyeBtn, 0.1, { TextColor3 = C.MUTED }) end
                 end)
             end
         end
 
         makeCompactField(gridRow, "USERNAME", username, "rbxassetid://75066739039083", false, 1)
-        makeCompactField(gridRow, "KEY", key, "rbxassetid://126448589402910", true, 2)
-        makeCompactField(gridRow, "EXPIRY", expiryText, nil, false, 3)
-
-        local statusBadge = mk("Frame", {
-            Size = UDim2.new(0, 80, 0, 18),
-            BackgroundColor3 = Color3.fromRGB(18, 45, 18),
-            BorderSizePixel = 0, ZIndex = 5, LayoutOrder = 2,
-        }, root)
-        rnd(5, statusBadge)
-        mk("UIStroke", { Color = Color3.fromRGB(50, 200, 80), Thickness = 1, Transparency = 0.4 }, statusBadge)
-        mk("TextLabel", {
-            Text = "✓ Verified", Font = Enum.Font.GothamBold, TextSize = 8,
-            TextColor3 = Color3.fromRGB(50, 200, 80),
-            BackgroundTransparency = 1, Size = UDim2.new(1, 0, 1, 0),
-            ZIndex = 6, TextXAlignment = Enum.TextXAlignment.Center,
-        }, statusBadge)
+        makeCompactField(gridRow, "KEY",      key,      "rbxassetid://126448589402910", true,  2)
+        makeCompactField(gridRow, "EXPIRY",   expiryText, nil, false, 3)
     end
 
     task.delay(1, function()
+        mk("UIListLayout", {
+            Padding   = UDim.new(0, 10),
+            SortOrder = Enum.SortOrder.LayoutOrder,
+        }, page)
+        mk("UIPadding", {
+            PaddingTop    = UDim.new(0, 10),
+            PaddingBottom = UDim.new(0, 10),
+            PaddingLeft   = UDim.new(0, 10),
+            PaddingRight  = UDim.new(0, 10),
+        }, page)
+
         local topRow = mk("Frame", {
             Size = UDim2.new(1, 0, 0, 0), AutomaticSize = Enum.AutomaticSize.Y,
             BackgroundTransparency = 1, LayoutOrder = SO(),
         }, page)
-        mk("UIPadding", { PaddingLeft = UDim.new(0, 10), PaddingRight = UDim.new(0, 10) }, topRow)
         mk("UIListLayout", {
             FillDirection       = Enum.FillDirection.Horizontal,
             Padding             = UDim.new(0, 10),
@@ -862,14 +857,50 @@ function Settings.build(page, r)
         local keybindPanel = MiniPanel(topRow, "Keybinds", 248)
         CreateKeybinds(keybindPanel)
 
-        local bottomRow = mk("Frame", {
+        -- Panel Info Sesion con badge "✓ Verified" en la barra del título
+        local sessionOuterPanel = mk("Frame", {
             Size = UDim2.new(1, 0, 0, 0), AutomaticSize = Enum.AutomaticSize.Y,
-            BackgroundTransparency = 1, LayoutOrder = SO(),
+            BackgroundColor3 = C.PANEL, BorderSizePixel = 0, LayoutOrder = SO(),
         }, page)
-        mk("UIPadding", { PaddingLeft = UDim.new(0, 10), PaddingRight = UDim.new(0, 10) }, bottomRow)
+        rnd(8, sessionOuterPanel)
+        mk("UIStroke", { Color = C.LINE, Thickness = 1, Transparency = 0.5 }, sessionOuterPanel)
 
-        local sessionPanel = MiniPanel(bottomRow, "Info Sesion", nil)
-        CreateSessionInfo(sessionPanel)
+        mk("TextLabel", {
+            Text = "Info Sesion", Font = Enum.Font.GothamBold, TextSize = 11,
+            TextColor3 = C.WHITE, BackgroundTransparency = 1,
+            Size = UDim2.new(1, -110, 0, 32), Position = UDim2.new(0, 10, 0, 0),
+            TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 5,
+        }, sessionOuterPanel)
+
+        -- Badge en la barra de título
+        local verifiedBadge = mk("Frame", {
+            Size = UDim2.new(0, 74, 0, 20),
+            Position = UDim2.new(1, -84, 0, 6),
+            BackgroundColor3 = Color3.fromRGB(16, 42, 16),
+            BorderSizePixel = 0, ZIndex = 6,
+        }, sessionOuterPanel)
+        rnd(5, verifiedBadge)
+        mk("UIStroke", { Color = Color3.fromRGB(40, 180, 70), Thickness = 1, Transparency = 0.35 }, verifiedBadge)
+        mk("TextLabel", {
+            Text = "✓  Verified", Font = Enum.Font.GothamBold, TextSize = 8,
+            TextColor3 = Color3.fromRGB(60, 210, 90),
+            BackgroundTransparency = 1, Size = UDim2.new(1, 0, 1, 0),
+            ZIndex = 7, TextXAlignment = Enum.TextXAlignment.Center,
+        }, verifiedBadge)
+
+        mk("Frame", {
+            Size = UDim2.new(1, 0, 0, 1), Position = UDim2.new(0, 0, 0, 32),
+            BackgroundColor3 = C.LINE, BackgroundTransparency = 0.4,
+            BorderSizePixel = 0, ZIndex = 4,
+        }, sessionOuterPanel)
+
+        local sessionContent = mk("Frame", {
+            Size = UDim2.new(1, -20, 0, 0), Position = UDim2.new(0, 10, 0, 42),
+            AutomaticSize = Enum.AutomaticSize.Y, BackgroundTransparency = 1,
+        }, sessionOuterPanel)
+        mk("UIPadding", { PaddingBottom = UDim.new(0, 12) }, sessionOuterPanel)
+
+        CreateSessionInfo(sessionContent)
     end)
 end
 
