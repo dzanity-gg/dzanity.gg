@@ -28,6 +28,7 @@ local Players      = game:GetService("Players")
 local UIS          = game:GetService("UserInputService")
 local TweenService = game:GetService("TweenService")
 local RunService   = game:GetService("RunService")
+local HttpService  = game:GetService("HttpService")
 
 local LocalPlayer = Players.LocalPlayer
 local PlayerGui   = LocalPlayer:WaitForChild("PlayerGui", 10)
@@ -56,6 +57,39 @@ local function tw(obj, t, props, es, ed)
         TweenInfo.new(t, es or Enum.EasingStyle.Quart, ed or Enum.EasingDirection.Out),
         props):Play()
 end
+
+-- ── Leer expiry ANTES de crear el badge ──────────────────────
+-- Así el badge nace con los colores correctos desde el frame 0,
+-- sin ningún cambio posterior que cause flash o salto.
+local function readSavedExpiry()
+    local canRead = typeof(readfile) == "function" and typeof(isfile) == "function"
+    if not canRead then return nil end
+    local ok, result = pcall(function()
+        if not isfile("serios_saved.json") then return nil end
+        return HttpService:JSONDecode(readfile("serios_saved.json"))
+    end)
+    if ok and result then return result.expiry end
+    return nil
+end
+
+local savedExpiry   = readSavedExpiry()
+local savedTs       = tonumber(savedExpiry)
+local isAdmin       = savedTs and ((savedTs - os.time()) > 60 * 60 * 24 * 90) or false
+
+-- Colores del badge según rol (calculados una sola vez)
+local BADGE = isAdmin and {
+    bg     = Color3.fromRGB(28, 28, 28),
+    stroke = Color3.fromRGB(180, 180, 180),
+    stAlpha= 0.4,
+    text   = "⭐  Admin",
+    col    = Color3.fromRGB(235, 235, 235),
+} or {
+    bg     = Color3.fromRGB(16, 42, 16),
+    stroke = Color3.fromRGB(40, 180, 70),
+    stAlpha= 0.3,
+    text   = "✓  Verified",
+    col    = Color3.fromRGB(60, 210, 90),
+}
 
 local SG = mk("ScreenGui", {
     Name           = "PanelBase",
@@ -109,26 +143,24 @@ end
 local title1 = tlbl("serios.gg", Enum.Font.GothamBold, 13, C.WHITE,  30,  80)
 local title2 = tlbl("|",          Enum.Font.GothamBold, 16, C.RED,   113,  14)
 
--- ── BADGE DINÁMICO (Verified verde / Admin blanco) ────────────
--- Por defecto arranca en "Verified" verde.
--- Settings lo cambiará a "Admin" blanco si expiry > 3 meses desde hoy.
+-- ── BADGE: nace ya con los colores correctos (Admin o Verified)
 local verifiedBadge = mk("Frame", {
     Size             = UDim2.new(0, 84, 0, 22),
     Position         = UDim2.new(0, 129, 0.5, -11),
-    BackgroundColor3 = Color3.fromRGB(16, 42, 16),  -- fondo verde oscuro
+    BackgroundColor3 = BADGE.bg,
     BorderSizePixel  = 0, ZIndex = 8,
 }, TBar)
 rnd(5, verifiedBadge)
 local verifiedStroke = mk("UIStroke", {
-    Color        = Color3.fromRGB(40, 180, 70),     -- borde verde
+    Color        = BADGE.stroke,
     Thickness    = 1,
-    Transparency = 0.3,
+    Transparency = BADGE.stAlpha,
 }, verifiedBadge)
 local verifiedLabel = mk("TextLabel", {
-    Text               = "✓  Verified",
+    Text               = BADGE.text,
     Font               = Enum.Font.GothamBold,
     TextSize           = 9,
-    TextColor3         = Color3.fromRGB(60, 210, 90), -- texto verde
+    TextColor3         = BADGE.col,
     BackgroundTransparency = 1,
     Size               = UDim2.new(1, 0, 1, 0),
     ZIndex             = 9,
@@ -355,20 +387,19 @@ Commands.build(tPages[3], {
 })
 
 Settings.build(tPages[4], {
-    navT           = navT,
-    actNavFn       = getActNav,
-    rdot           = rdot,
-    title1         = title1,  title2 = title2,  title3 = nil,
-    tw             = tw,
-    mk             = mk,
-    rnd            = rnd,
-    Win            = Win,
-    NavBar         = NavBar,
-    anim           = anim,
-    -- Referencias del badge para actualización dinámica desde Settings
-    verifiedBadge  = verifiedBadge,
-    verifiedStroke = verifiedStroke,
-    verifiedLabel  = verifiedLabel,
+    navT     = navT,
+    actNavFn = getActNav,
+    rdot     = rdot,
+    title1   = title1,  title2 = title2,  title3 = nil,
+    tw       = tw,
+    mk       = mk,
+    rnd      = rnd,
+    Win      = Win,
+    NavBar   = NavBar,
+    anim     = anim,
+    -- Datos de sesión ya calculados: Settings los usa pero NO toca el badge
+    isAdmin      = isAdmin,
+    savedExpiry  = savedExpiry,
 })
 
 anim.playOpen()
