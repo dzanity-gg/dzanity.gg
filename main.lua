@@ -1,6 +1,6 @@
 -- main.lua  –  PanelBase | seriosload.gg
 
-local RAW_BASE = "https://raw.githubusercontent.com/denzells/panel/main/main.lua"
+local RAW_BASE = "https://raw.githubusercontent.com/denzells/panel/main/main"
 
 local function loadModule(path)
     local ok, result = pcall(function()
