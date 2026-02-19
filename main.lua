@@ -2,12 +2,25 @@
 
 local RAW_BASE = "https://raw.githubusercontent.com/denzells/panel/main/"
 
+local _loadstring = loadstring  -- captura loadstring del executor ANTES de cualquier pcall
+
 local function loadModule(path)
-    local ok, result = pcall(function()
-        return loadstring(game:HttpGet(RAW_BASE .. path))()
+    local content, err
+    local ok = pcall(function()
+        content = game:HttpGet(RAW_BASE .. path)
     end)
-    if not ok then
-        warn("[PanelBase] Error cargando " .. path .. ": " .. tostring(result))
+    if not ok or not content or content == "" then
+        warn("[PanelBase] Error descargando " .. path)
+        return nil
+    end
+    local fn, compErr = _loadstring(content)
+    if not fn then
+        warn("[PanelBase] Error compilando " .. path .. ": " .. tostring(compErr))
+        return nil
+    end
+    local ok2, result = pcall(fn)
+    if not ok2 then
+        warn("[PanelBase] Error ejecutando " .. path .. ": " .. tostring(result))
         return nil
     end
     return result
@@ -64,8 +77,6 @@ local function tw(obj, t, props, es, ed)
 end
 
 -- ── Leer expiry ANTES de crear el badge ──────────────────────
--- Así el badge nace con los colores correctos desde el frame 0,
--- sin ningún cambio posterior que cause flash o salto.
 local function readSavedExpiry()
     local canRead = typeof(readfile) == "function" and typeof(isfile) == "function"
     if not canRead then return nil end
@@ -148,7 +159,7 @@ end
 local title1 = tlbl("serios.gg", Enum.Font.GothamBold, 13, C.WHITE,  30,  80)
 local title2 = tlbl("|",          Enum.Font.GothamBold, 16, C.RED,   113,  14)
 
--- ── BADGE: nace ya con los colores correctos (Admin o Verified)
+-- ── BADGE
 local verifiedBadge = mk("Frame", {
     Size             = UDim2.new(0, 84, 0, 22),
     Position         = UDim2.new(0, 129, 0.5, -11),
@@ -172,7 +183,6 @@ local verifiedLabel = mk("TextLabel", {
     TextXAlignment     = Enum.TextXAlignment.Center,
 }, verifiedBadge)
 
--- title3 = nil (no existe "Base Panel")
 local title3 = nil
 
 local title4 = tlbl("|",      Enum.Font.GothamBold, 14, C.MUTED, 225,  14)
@@ -402,7 +412,6 @@ Settings.build(tPages[4], {
     Win      = Win,
     NavBar   = NavBar,
     anim     = anim,
-    -- Datos de sesión ya calculados: Settings los usa pero NO toca el badge
     isAdmin      = isAdmin,
     savedExpiry  = savedExpiry,
 })
