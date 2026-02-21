@@ -9,5 +9,16 @@
     "expires_at": null,
     "created_by_discord": "denzells",
     "discord_user_id": "1225229959254245509"
+  },
+  "x21r-mgri1-xl34": {
+    "key": "x21r-mgri1-xl34",
+    "used": false,
+    "username": null,
+    "ip_hash": null,
+    "session_id": null,
+    "created_at": "2026-02-21T21:10:28.316314+00:00",
+    "expires_at": null,
+    "created_by_discord": "denzells",
+    "discord_user_id": "1225229959254245509"
   }
 }
